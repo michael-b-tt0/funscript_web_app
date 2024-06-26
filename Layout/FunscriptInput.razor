@@ -1,0 +1,94 @@
+﻿<div class="card boundry">
+    <div class="card-body">
+        <InputFile OnChange="@SelectFile" accept=".funscript" class="form-control mb-3" />
+        @if (file != null)
+        {
+            if (errorMessage == null)
+            {
+                <div class="mb-3">
+                    <strong>File Name:</strong>
+                    @file.Name
+                </div>
+                <div>
+                    <strong>File Size:</strong>
+                    @file.Size.ToString("N0") bytes
+                </div>
+                if (funscript != null)
+                {
+                    <div>
+                        <strong>Funscript length:</strong>
+                        @funscript.duration
+                    </div>
+                    <div>
+                        <strong>Funscript Actions:</strong>
+                        @funscript.number_of_actions.ToString()
+                    </div>
+                    <div>
+                        <strong>Average Speed:</strong>
+                        @funscript.GetAverageSpeed().ToString()
+                    </div>
+                    @* <div>
+        <strong>Number of action
+        groups:</strong>
+        @funscript.GetactionGroupscount().ToString()
+        </div> *@
+
+                }
+
+            }
+            else
+            {
+                <p class="text-danger">@errorMessage</p>
+            }
+        }
+    </div>
+</div>
+
+
+@code {
+
+    IBrowserFile? file;
+    int MAXFILESIZE = 500000;
+    string? errorMessage;
+
+    Funscript? funscript;
+
+    [Parameter]
+    public EventCallback<Funscript> InputValueChanged
+    {
+        get;
+        set;
+    }
+
+    public async Task SelectFile(InputFileChangeEventArgs e)
+    {
+        file = e.File;
+        errorMessage = null;
+        if ((file.Size >= MAXFILESIZE))
+
+        {
+            errorMessage = "file to too large";
+        }
+        else
+        {
+
+
+            funscript = await
+            funscript_manager.DeserializeJsonFile(file);
+
+            Console.WriteLine(funscript.version);
+            Console.WriteLine(funscript.video_url);
+            Console.WriteLine(funscript.GetAverageSpeed());
+            @* funscript.generateActionGroups(); *@
+            await InputValueChanged.InvokeAsync(funscript);
+
+
+
+
+        }
+
+    }
+
+
+
+}

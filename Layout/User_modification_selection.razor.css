@@ -1,0 +1,41 @@
+.control_flex {
+    max-width: 800px;
+    max-height: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-grow: 1;
+
+}
+
+.button_flex {
+    display: flex;
+    flex-direction: column;
+
+}
+
+.card {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-right: 20px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.btn-block {
+    width: 100%;
+    text-align: left;
+}
+
+.right-side-component-container {
+    background-color: transparent;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.Offset {
+
+    margin: 10px;
+    margin-top: 5px;
+}

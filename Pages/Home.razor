@@ -1,0 +1,83 @@
+﻿@page "/"
+
+
+<PageTitle>Funscript Modifier</PageTitle>
+
+<h1>Hello, world!</h1>
+
+<p>Welcome to your new app.</p>
+
+<div class="main_grid">
+    <div style="order: 1;">
+        <FunscriptInput InputValueChanged="HandleInputValueChanged" />
+
+    </div>
+    <div style="order: 2;">
+        @if (rendercanvas)
+        {
+
+            <Htmlcanvas funscript="funscript" Width="1500" Height="200" Maincanvas="true" />
+        }
+    </div>
+
+
+
+
+    <div style="order: 3;">
+
+
+        <User_modification_selection data="@render_modified_canvas" datachanged="handle_rendermodifed_cavas" />
+    </div>
+
+
+    <div style="order: 4;">
+        @if (render_modified_canvas)
+        {
+
+            <Htmlcanvas funscript="funscript_manager.modified_funscript" Width="1500" Height="200" Maincanvas="false" />
+        }
+    </div>
+</div>
+
+
+@code {
+
+
+    Funscript? funscript;
+
+
+    public bool rendercanvas { get; set; }
+
+    public bool render_modified_canvas;
+
+    private void handle_rendermodifed_cavas(bool newData)
+    {
+        render_modified_canvas = newData;
+        // Handle the data change or propagate it further up if necessary
+    }
+
+    private void HandleInputValueChanged(Funscript script)
+    {
+        funscript = script;
+        render_modified_canvas = false;
+        StateHasChanged();
+        rendercanvas = true;
+        funscript_manager.modified_funscript = funscript;
+        funscript_manager.starting_funscript = funscript;
+        Console.WriteLine("Input Value Changed");
+
+    }
+
+    protected override void OnInitialized()
+    {
+        // Listen for changes in the static class and trigger a rerender if needed
+
+        funscript_manager.rerender_canvas_event += rerender;
+    }
+
+    public void rerender()
+    {
+        StateHasChanged();
+        Console.WriteLine("canvas should be rendered here");
+    }
+}

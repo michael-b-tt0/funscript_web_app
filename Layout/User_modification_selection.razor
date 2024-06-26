@@ -1,0 +1,103 @@
+﻿@if (funscript_manager.User_entered_funscript)
+{
+    <div class="control_flex">
+        <div class="button_flex">
+            @foreach (var buttonInfo in ButtonTexts)
+            {
+                <button class="btn btn-primary mb-2 btn-block" @onclick="() => ButtonClicked(buttonInfo)">
+                    @buttonInfo
+                </button>
+            }
+        </div>
+
+        @if (componentToRender == ComponentType.Offset)
+        {
+            <div class="Offset">
+                <Offset GrandChildData="@data" GrandChildDataChanged="HandleGrandChildDataChanged" />
+            </div>
+        }
+        else if (componentToRender == ComponentType.FunHalver)
+        {
+            <div class="Offset">
+                <FunHalver GrandChildData="@data" GrandChildDataChanged="HandleGrandChildDataChanged" />
+            </div>
+        }
+        else if (componentToRender == ComponentType.Fundoubler)
+        {
+            <div class="Offset">
+                <Fundoubler />
+            </div>
+        }
+
+
+
+
+
+    </div>
+}
+@code {
+
+    [Parameter]
+    public bool data { get; set; }
+
+
+    [Parameter]
+    public EventCallback<bool> datachanged { get; set; }
+
+
+    private async Task HandleGrandChildDataChanged(bool newData)
+    {
+        data = true;
+        await datachanged.InvokeAsync(data);
+    }
+
+
+    public enum ComponentType
+    {
+        None,
+        Offset,
+        FunHalver,
+        Fundoubler
+    }
+
+    private ComponentType componentToRender = ComponentType.None;
+    private List<string> ButtonTexts = new List<string>
+{
+"Offset", "FunHalver", "Fundoubler"
+};
+
+    private void ButtonClicked(string buttonText)
+    {
+        switch (buttonText)
+        {
+            case "Offset":
+                // Handle Button 1 click
+                componentToRender = ComponentType.Offset;
+                break;
+            case "FunHalver":
+                // Handle Button 2 click
+                componentToRender = ComponentType.FunHalver;
+                break;
+            case "Fundoubler":
+                // Handle Button 3 click
+                componentToRender = ComponentType.Fundoubler;
+                break;
+
+        }
+
+
+
+    }
+
+    protected override void OnInitialized()
+    {
+        // Listen for changes in the static class and trigger a rerender if needed
+        funscript_manager.RerenderNeededEvent += HandleRerenderNeeded;
+    }
+
+    private void HandleRerenderNeeded()
+    {
+
+        StateHasChanged();
+    }
+}
