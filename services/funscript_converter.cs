@@ -321,6 +321,11 @@ public static class funscript_converter_fundoubler
 
         return finalGroup;
     }
+    public static List<Action> GetDoubleSpeedGroup(List<Action> actionGroup, FunDoublerOptions options)
+    {
+        var noShortPauses = RemoveShortPauses(actionGroup, options);
+        var simplifiedGroup = SimplifyGroup(noShortPauses);
+        return DoubleActions(simplifiedGroup, options);
+    }
 
-    
 }
