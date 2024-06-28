@@ -25,14 +25,20 @@
         else if (componentToRender == ComponentType.Fundoubler)
         {
             <div class="Offset">
-                <Fundoubler />
+                <Fundoubler GrandChildData="@data" GrandChildDataChanged="HandleGrandChildDataChanged" />
             </div>
         }
 
 
+        
 
 
 
+
+    </div>
+    <div class="below-control-flex">
+        <p> very strange</p>
+    <Modified_script_data />
     </div>
 }
 @code {

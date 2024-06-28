@@ -233,14 +233,14 @@ public static class funscript_converter_funhalver
 public static class funscript_converter_fundoubler
 {
 
-    public static List<Action> GetDoubleSpeedGroup(List<Action> actionGroup, FunDoublerOptions options)
+    public static List<ActionData> GetDoubleSpeedGroup(List<ActionData> actionGroup, FunDoublerOptions options)
     {
         var noShortPauses = RemoveShortPauses(actionGroup, options);
         var simplifiedGroup = SimplifyGroup(noShortPauses);
         return DoubleActions(simplifiedGroup, options);
     }
 
-    private static ActionData[] RemoveShortPauses(ActionData[] actionGroup, FunDoublerOptions options)
+    private static List<ActionData> RemoveShortPauses(List<ActionData> actionGroup , FunDoublerOptions options)
     {
         return actionGroup.Where((action, i) =>
         {
@@ -249,14 +249,14 @@ public static class funscript_converter_fundoubler
 
             var diff = Math.Abs(action.at - actionGroup[i - 1].at);
             return diff > options.ShortPauseDuration;
-        }).ToArray();
+        }).ToList();
     }
-    private static List<ActionData> SimplifyGroup(ActionData[] actions)
+    private static List<ActionData> SimplifyGroup(List<ActionData> actions)
     {
         var simplifiedGroup = new List<ActionData>();
-        for (int i = 0; i < actions.Length; i++)
+        for (int i = 0; i < actions.Count; i++)
         {
-            if (i == 0 || i == actions.Length - 1)
+            if (i == 0 || i == actions.Count - 1)
             {
                 simplifiedGroup.Add(actions[i]);
                 continue;
@@ -321,11 +321,89 @@ public static class funscript_converter_fundoubler
 
         return finalGroup;
     }
-    public static List<Action> GetDoubleSpeedGroup(List<Action> actionGroup, FunDoublerOptions options)
+    
+    public static Funscript GetDoubleSpeedScript(Funscript funscript, FunDoublerOptions options)
     {
-        var noShortPauses = RemoveShortPauses(actionGroup, options);
-        var simplifiedGroup = SimplifyGroup(noShortPauses);
-        return DoubleActions(simplifiedGroup, options);
+        var output = new List<ActionData>();
+
+        var orderedActions = funscript.actions.OrderBy(a => a.at).ToList();
+        bool longFirstWait = orderedActions[1].at - orderedActions[0].at > 5000;
+
+        if (longFirstWait) output.Add(orderedActions[0]);
+
+        var actionGroups = longFirstWait
+            ? GetActionGroups(orderedActions.Skip(1).ToList())
+            : GetActionGroups(orderedActions);
+
+        var fasterGroups = actionGroups.Select(group => GetDoubleSpeedGroup(group, options));
+
+        foreach (var group in fasterGroups)
+        {
+            output.AddRange(group);
+        }
+
+        if (output.Last().at != funscript.actions.Last().at)
+        {
+            output.Add(new ActionData
+            {
+                at = funscript.actions.Last().at,
+                pos = funscript.actions.Last().pos
+            });
+        }
+
+        //output = output.Select(RoundAction).ToList();
+        Funscript DoubledSpeedScript = new Funscript
+        {
+            version = funscript.version,
+            inverted = funscript.inverted,
+            range = funscript.range,
+            actions = output.ToArray(),
+            metadata = funscript.metadata,
+            video_url = funscript.video_url,
+            title = $"{funscript.title}_Doublespeed"
+        };
+
+        return DoubledSpeedScript;
     }
 
+    public static List<List<ActionData>> GetActionGroups(List<ActionData> actions)
+    {
+        var actionGroups = new List<List<ActionData>>();
+        int index = -1;
+        int timeSinceLast = -1;
+
+        for (int i = 0; i < actions.Count; i++)
+        {
+            if (i == 0)
+            {
+                actionGroups.Add(new List<ActionData> { actions[i] });
+                index++;
+                continue;
+            }
+
+            if (i == 1)
+            {
+                actionGroups[index].Add(actions[i]);
+                timeSinceLast = Math.Max(250, actions[i].at - actions[i - 1].at);
+                continue;
+            }
+
+            int newTimeSinceLast = actions[i].at - actions[i - 1].at;
+            if (newTimeSinceLast > 5 * timeSinceLast)
+            {
+                actionGroups.Add(new List<ActionData> { actions[i] });
+                index++;
+            }
+            else
+            {
+                actionGroups[index].Add(actions[i]);
+            }
+
+            timeSinceLast = Math.Max(250, newTimeSinceLast);
+        }
+
+        return actionGroups;
+    }
 }
+
+    

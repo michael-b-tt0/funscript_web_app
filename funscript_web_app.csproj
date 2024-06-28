@@ -7,10 +7,27 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Layout\Modified_script_data.razor" />
+    <Content Remove="Pages\Modified_script_data.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Blazor.Extensions.Canvas" Version="1.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.6" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.6" PrivateAssets="all" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Layout\Modified_script_data.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Layout\Modified_script_data.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Layout\Modified_script_data.razor" />
   </ItemGroup>
 
 </Project>
