@@ -1,0 +1,152 @@
+/* /Layout/FunscriptInput.razor.rz.scp.css */
+.boundry[b-mve0m4a2ob] {
+
+    max-width: 350px;
+}
+/* /Layout/Htmlcanvas.razor.rz.scp.css */
+.download_button[b-ime3d603s6] {
+    position: relative;
+    top: 40px;
+
+    justify-content: center;
+
+}
+/* /Layout/Offset.razor.rz.scp.css */
+.Offset[b-rnjg8ev7n3] {
+
+    margin: 10px;
+    margin-top: 5px;
+}
+
+.button1[b-rnjg8ev7n3] {
+    margin: 10px;
+
+}
+/* /Layout/Timeline.razor.rz.scp.css */
+.timeline[b-10vd0p8md0] {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    align-content: flex-start;
+    margin: 0px 0px;
+    border-top: 1px solid #606262;
+    overflow: visible;
+    max-width: 1500px;
+    width: 100%;
+}
+
+.timeline .dot[b-10vd0p8md0] {
+    display: inline-block;
+    width: 0px;
+    height: 5px;
+    border-left: 3px solid #606262;
+
+
+}
+
+.timeline .dot.blue[b-10vd0p8md0],
+.timeline .dot.text[b-10vd0p8md0] {
+    height: 20px;
+    position: relative;
+    /* transition: 0.5s height ease; */
+}
+
+
+.timeline .dot[b-10vd0p8md0]:after {
+    content: "";
+    display: block;
+    position: absolute;
+    left: -20px;
+    bottom: -20px;
+    background: red;
+    border-radius: 50% 50% 0 50%;
+    /* transform: rotate(-135deg); */
+    width: 0px;
+    height: 0px;
+    transition: 0.5s all ease;
+}
+
+.timeline .dot.blue[b-10vd0p8md0]:after {
+    width: 30px;
+    height: 30px;
+}
+
+
+.timeline .dot.blue[b-10vd0p8md0]:after {
+    background: blue;
+}
+
+.timeline .dot.text[b-10vd0p8md0]:after {
+    display: inline-block;
+    /* Adjust display property */
+    width: auto;
+    height: auto;
+    padding: 5px 10px;
+    /* Adjust padding as needed */
+    background-color: transparent;
+    /* Change color as needed */
+    color: white;
+    /* Text color */
+    font-size: 12px;
+    /* Adjust font size as needed */
+    border-radius: 5px;
+    /* Adjust border radius as needed */
+    text-align: right;
+    /* Center text */
+    content: attr(data-text);
+    /* Set content to value of data-text attribute */
+
+}
+/* /Layout/User_modification_selection.razor.rz.scp.css */
+.control_flex[b-f19rgzhy52] {
+    max-width: 800px;
+    max-height: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-grow: 0;
+
+}
+
+.below-control-flex[b-f19rgzhy52] {
+    flex-grow: 1;
+    display: flex;
+    max-width: 800px;
+    max-height: 800px;
+    margin: 0 auto;
+    /* Add styling as needed */
+}
+
+.button_flex[b-f19rgzhy52] {
+    display: flex;
+    flex-direction: column;
+
+}
+
+.card[b-f19rgzhy52] {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-right: 20px;
+}
+
+.card-body[b-f19rgzhy52] {
+    padding: 20px;
+}
+
+.btn-block[b-f19rgzhy52] {
+    width: 100%;
+    text-align: left;
+}
+
+.right-side-component-container[b-f19rgzhy52] {
+    background-color: transparent;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.Offset[b-f19rgzhy52] {
+
+    margin: 10px;
+    margin-top: 5px;
+}
