@@ -46,6 +46,21 @@ public static class funscript_manager
         }
     }
 
+    public static bool user_Applied_modifier;
+    public static bool User_Applied_modifier
+    {
+        get { return user_Applied_modifier; }
+        set
+        {
+            if (user_Applied_modifier != value)
+            {
+                user_Applied_modifier = value;
+                // Raise the event when the value changes
+                RerenderNeededEvent?.Invoke();
+            }
+        }
+    }
+
     public delegate void RerenderNeededEventHandler();
 
     // Define the event using the delegate type

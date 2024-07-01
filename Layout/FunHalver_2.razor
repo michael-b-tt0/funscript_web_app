@@ -1,8 +1,9 @@
-﻿@inject ILogger<FunHalver> Logger
-<h3>FunHalver</h3>
+﻿@inject ILogger<FunHalver_2> Logger
+<h3>FunHalver_2</h3>
 
 <p>Halves the speed of a script without sacrificing sync by changing each up+down stroke into a single up or down stroke.</p>
 
+<InputNumber id="speed_threshold" @bind-Value="speedThreshold" class="form-control" />
 <div class="form-check">
     <input type="checkbox" class="form-check-input" @bind="@Reset_After_Pause" id="Reset_After_Pause" />
     <label class="form-check-label" for="checkboxExample">Reset After Pause</label>
@@ -30,17 +31,17 @@
     [Parameter]
     public EventCallback<bool> GrandChildDataChanged { get; set; }
 
-    
-    
+
+
     public bool Reset_After_Pause { get; set; }
 
     public bool Remove_Short_Pauses { get; set; } = true;
 
     public bool Match_First_Downstroke { get; set; }
 
-    public bool Match_Group_End_Position { get; set; }= true;
+    public bool Match_Group_End_Position { get; set; } = true;
 
-
+    public float speedThreshold { get; set; } = 0f;
 
     public int short_pause_duration { get; set; } = 2000;
 
@@ -49,20 +50,26 @@
     private void Apply_funhalver()
     {
         funscript = funscript_manager.modified_funscript;
-        FunHalver_options options = new FunHalver_options
+        FunHalver_options_2 options = new FunHalver_options_2
             {
                 ResetAfterPause = Reset_After_Pause,
                 RemoveShortPauses = Remove_Short_Pauses,
                 MatchFirstDownstroke = Match_First_Downstroke,
                 MatchGroupEndPosition = Match_Group_End_Position,
-                ShortPauseDuration = short_pause_duration
+                ShortPauseDuration = short_pause_duration,
+                    SpeedThreshold = speedThreshold,
             };
-        
-        funscript = funscript_converter_funhalver.GetHalfSpeedScript(funscript, options, Logger);
-        funscript_manager.modified_funscript = funscript;
-        funscript_manager.User_Applied_modifier = true;
-        GrandChildData = true;
-        GrandChildDataChanged.InvokeAsync(GrandChildData);
+        if(funscript != null){
+            funscript = funscript_converter_funhalver_3.GetHalfSpeedScript(funscript, options, Logger);
+            funscript_manager.modified_funscript = funscript;
+            funscript_manager.User_Applied_modifier = true;
+            GrandChildData = true;
+            GrandChildDataChanged.InvokeAsync(GrandChildData);
+        }
+        else
+        {
+ Logger.LogError("funscript is null");
+        }
     }
 
     private void reset_script()

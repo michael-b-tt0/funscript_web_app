@@ -87,7 +87,7 @@
         this._canvasReference.CreateCanvas2DAsync();
         await this._context.ClearRectAsync(0, 0, Width, Height);
         
-        LoggerExtensions.Log_number_of_funscript_actions(Logger, funscript.actions.Length);
+        //LoggerExtensions.Log_number_of_funscript_actions(Logger, funscript.actions.Length);
         for (int i = 1; i < funscript.actions.Length; i++)
         {
             var action = funscript.actions[i];
@@ -112,7 +112,7 @@
             await this._context.StrokeAsync();
             
             
-            LoggerExtensions.Log_html_cavas_render(Logger, i,action.at, action.pos, prevAction.at, prevAction.pos, x_value, y_value, speed, linecolour.HexValue);
+            //LoggerExtensions.Log_html_cavas_render(Logger, i,action.at, action.pos, prevAction.at, prevAction.pos, x_value, y_value, speed, linecolour.HexValue);
 
             if (currentTime >= timeinterval)
 
@@ -131,7 +131,7 @@ x, Height - 15); // Adjust position as needed *@
             currentTime = action.at;
             if (currentTime == funscript.lastactionat)
             {
-                Logger.LogWarning($"time {currentTime} added to timeline at {i}", currentTime, i);
+                //Logger.LogWarning($"time {currentTime} added to timeline at {i}", currentTime, i);
                 timeline.Add(funscript.lastactionat);
             }
         }

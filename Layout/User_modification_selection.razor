@@ -28,19 +28,33 @@
                 <Fundoubler GrandChildData="@data" GrandChildDataChanged="HandleGrandChildDataChanged" />
             </div>
         }
-
-
-        
-
+        else if (componentToRender == ComponentType.FunHalver2)
+        {
+            <div class="Offset">
+                <FunHalver_2 GrandChildData="@data" GrandChildDataChanged="HandleGrandChildDataChanged" />
+            </div>
+        }
 
 
 
     </div>
-    <div class="below-control-flex">
-        <p> very strange</p>
-    <Modified_script_data />
-    </div>
+
+
+
+
+    @if (funscript_manager.User_Applied_modifier)
+    {
+
+        <div class="below-control-flex">
+
+            <DisplayModifedData funscript="@funscript_manager.modified_funscript" />
+        </div>
+
+    }
+
 }
+
+
 @code {
 
     [Parameter]
@@ -63,13 +77,14 @@
         None,
         Offset,
         FunHalver,
-        Fundoubler
+        Fundoubler,
+        FunHalver2
     }
 
     private ComponentType componentToRender = ComponentType.None;
     private List<string> ButtonTexts = new List<string>
 {
-"Offset", "FunHalver", "Fundoubler"
+"Offset", "FunHalver", "Fundoubler", "FunHalver2"
 };
 
     private void ButtonClicked(string buttonText)
@@ -87,6 +102,10 @@
             case "Fundoubler":
                 // Handle Button 3 click
                 componentToRender = ComponentType.Fundoubler;
+                break;
+            case "FunHalver2":
+                // Handle Button 3 click
+                componentToRender = ComponentType.FunHalver2;
                 break;
 
         }

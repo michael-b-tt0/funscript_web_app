@@ -35,6 +35,7 @@
         funscript = funscript_manager.modified_funscript;
         funscript = funscript_converter_offset.GetOffsetScript(funscript, value);
         funscript_manager.modified_funscript = funscript;
+        funscript_manager.User_Applied_modifier = true;
         GrandChildData = true;
         GrandChildDataChanged.InvokeAsync(GrandChildData);
         @* StateHasChanged(); *@

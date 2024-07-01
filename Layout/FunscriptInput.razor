@@ -75,7 +75,7 @@
 
             funscript = await
             funscript_manager.DeserializeJsonFile(file);
-
+            funscript_manager.User_Applied_modifier = false;
             Console.WriteLine(funscript.version);
             Console.WriteLine(funscript.video_url);
             Console.WriteLine(funscript.GetAverageSpeed());

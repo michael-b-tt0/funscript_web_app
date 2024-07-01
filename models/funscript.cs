@@ -208,7 +208,25 @@ public class Funscript
 
     public int GetAverageSpeed() => CalculateAverageSpeed(actions);
 
+    public ActionData[] FilterActionsBySpeed(float speedThreshold)
+    {
+        if (actions == null || actions.Length < 2)
+            return actions ?? Array.Empty<ActionData>();
 
+        List<ActionData> filteredActions = new List<ActionData>();
+        filteredActions.Add(actions[0]); // Always include the first action
+
+        for (int i = 1; i < actions.Length; i++)
+        {
+            float speed = GetSpeed(actions[i - 1], actions[i]);
+            if (speed > speedThreshold)
+            {
+                filteredActions.Add(actions[i]);
+            }
+        }
+
+        return filteredActions.ToArray();
+    }
 
 
 }
@@ -217,4 +235,6 @@ public class KeyAction : ActionData
 {
     public string Type { get; set; }
     public List<ActionData> SubActions { get; set; } = new();
+    public bool EligibleForHalving { get; set; }
 }
+

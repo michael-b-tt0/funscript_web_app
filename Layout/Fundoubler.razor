@@ -6,8 +6,8 @@
     <label class="form-check-label" for="checkboxExample">Reset After Pause</label>
 </div>
 <InputNumber id="short_pause_duration" @bind-Value="short_pause_duration" class="form-control" />
-<button class="btn btn-primary mb-2 button1" @onclick="Apply_fundoubler">Apply FunHalver</button>
-<button class="btn btn-primary mb-2 button1" @onclick="reset_script">Reset FunHalver</button>
+<button class="btn btn-primary mb-2 button1" @onclick="Apply_fundoubler">Apply Fundoubler</button>
+<button class="btn btn-primary mb-2 button1" @onclick="reset_script">Reset Fundoubler</button>
 @code {
     private bool Match_group_end = true;
 
@@ -32,6 +32,7 @@
             };
         funscript = funscript_converter_fundoubler.GetDoubleSpeedScript(funscript, options);
         funscript_manager.modified_funscript = funscript;
+        funscript_manager.User_Applied_modifier = true;
         GrandChildData = true;
         GrandChildDataChanged.InvokeAsync(GrandChildData);
     }
