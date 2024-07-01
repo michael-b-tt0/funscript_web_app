@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "funscript_web_app",
   "resources": {
-    "hash": "sha256-WESpSD7E95U6WrcIr/KYhcU2X7jrA6+zoDixOkine8s=",
+    "hash": "sha256-d3748FdOkEHmy3L4H1ggL8uGfTWaaICWurexNCf5D4Q=",
     "jsModuleNative": {
       "dotnet.native.8.0.6.t6n099mmkt.js": "sha256-t8Ck6Ll67yDHbHCAkGjuSGiZaTiWm1eGolmLAMlfOR0="
     },
@@ -9,7 +9,7 @@
       "dotnet.runtime.8.0.6.usxxzh3qee.js": "sha256-+E96dgYQl8OrHQb4yNZ7QwNr3SZzLSP8lwKRzwSiMsw="
     },
     "wasmNative": {
-      "dotnet.native.wasm": "sha256-qAxXyCCZTAvd7EcOyv21YTkYsspXjQfnNny+uYv2MHQ="
+      "dotnet.native.wasm": "sha256-KVWYMwnVuKmm+L5L2MPSt84JvI8nEQ26a55YmaQt6oA="
     },
     "icu": {
       "icudt_CJK.dat": "sha256-SZLtQnRc0JkwqHab0VUVP7T3uBPSeYzxzDnpxPpUnHk=",
