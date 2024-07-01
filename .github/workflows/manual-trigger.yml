@@ -6,6 +6,8 @@ on:
 jobs:
   deploy-to-github-pages:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Setup .NET Core
