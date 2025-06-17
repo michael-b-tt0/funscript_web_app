@@ -1,0 +1,61 @@
+@using funscript_web_app.models
+@using funscript_web_app.services
+@* Changed to fully qualified static class access instead of injection for funscript_manager *@
+
+<h3>Funquarter</h3>
+
+@if (funscript_web_app.funscript_manager.modified_funscript != null)
+{
+    <button @onclick="ConvertScript">Convert to Quarter Speed</button>
+    <p>@conversionMessage</p>
+    @if (convertedScript != null)
+    {
+        <p>New Title: @convertedScript.title</p>
+        <p>Original Action Count: @funscript_web_app.funscript_manager.starting_funscript?.actions?.Length</p>
+        <p>New Action Count: @convertedScript.actions?.Length</p>
+    }
+}
+else
+{
+    <p>Please upload a funscript first, or ensure a modified script is available.</p>
+}
+
+@code {
+    private Funscript? convertedScript;
+    private string conversionMessage = "";
+
+    // Parameters to communicate data changes to the parent, similar to other modification components
+    [Parameter]
+    public bool GrandChildData { get; set; } // This might be named 'Data' or similar in the parent
+
+    [Parameter]
+    public EventCallback<bool> GrandChildDataChanged { get; set; } // This might be named 'DataChanged' or similar
+
+    private async Task ConvertScript()
+    {
+        if (funscript_web_app.funscript_manager.modified_funscript != null)
+        {
+            try
+            {
+                // Use the existing modified_funscript as the source
+                convertedScript = funscript_converter_funquarter.GetQuarterSpeedScript(funscript_web_app.funscript_manager.modified_funscript, 4);
+                funscript_web_app.funscript_manager.modified_funscript = convertedScript; // Update the global modified script
+                funscript_web_app.funscript_manager.User_Applied_modifier = true; // Notify that a modification has been applied
+
+                conversionMessage = "Script converted to quarter speed successfully!";
+
+                // Notify parent component that data has changed so UI can update (e.g., rerender canvas)
+                await GrandChildDataChanged.InvokeAsync(true);
+            }
+            catch (Exception ex)
+            {
+                conversionMessage = $"Error during conversion: {ex.Message}";
+            }
+        }
+        else
+        {
+            conversionMessage = "No script loaded to convert.";
+        }
+        StateHasChanged(); // Ensure this component re-renders to show messages
+    }
+}

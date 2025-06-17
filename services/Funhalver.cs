@@ -70,7 +70,7 @@ namespace funscript_web_app;
             var action = filteredGroup[i];
             var lastAction = i > 0 ? filteredGroup[i - 1] : null;
             var nextAction = i < filteredGroup.Count - 1 ? filteredGroup[i + 1] : null;
-            float speed = lastAction != null ? GetSpeed(lastAction, action) : 0;
+            float speed = lastAction != null ? Funscript.GetSpeed(lastAction, action) : 0;
             bool isEligibleForHalving = speed > options.SpeedThreshold;
             KeyAction keyAction = new KeyAction
             {
@@ -181,15 +181,15 @@ namespace funscript_web_app;
             }).ToArray();
         }
 
-        public static Funscript GetHalfSpeedScript(Funscript funscript, FunHalver_options_2 options, ILogger logger)
-        {   logger.LogWarning($"the funscript started of with {funscript.number_of_actions} actions", funscript);
+        public static Funscript GetHalfSpeedScript(Funscript funscript, FunHalver_options_2 options)
+        {   // logger.LogWarning($"the funscript started of with {funscript.number_of_actions} actions", funscript);
             var filteredGroup = GetFilteredGroup(funscript);
-        logger.LogWarning($"after first filtering number left is{filteredGroup.Count}", filteredGroup.Count);
+        // logger.LogWarning($"after first filtering number left is{filteredGroup.Count}", filteredGroup.Count);
         var shortPauseRemovedGroup = RemoveShortPauses(filteredGroup, options);
-        logger.LogWarning($"after removing short pauses {shortPauseRemovedGroup.Count}", shortPauseRemovedGroup.Count);
+        // logger.LogWarning($"after removing short pauses {shortPauseRemovedGroup.Count}", shortPauseRemovedGroup.Count);
             var keyActions = IdentifyKeyActions(shortPauseRemovedGroup, options);
-        logger.LogWarning($"number of keyactions over the speedlimit is {CountActionsExceedingThreshold(keyActions)}");
-        logger.LogWarning($"number of identified keyactions is {keyActions.Count}", keyActions.Count);
+        // logger.LogWarning($"number of keyactions over the speedlimit is {CountActionsExceedingThreshold(keyActions)}");
+        // logger.LogWarning($"number of identified keyactions is {keyActions.Count}", keyActions.Count);
             var finalActions = GenerateFinalActions(keyActions, funscript, options);
 
             Funscript HalfSpeedScript = new Funscript
@@ -209,30 +209,6 @@ namespace funscript_web_app;
     public static int CountActionsExceedingThreshold(List<KeyAction> keyActions)
     {
         return keyActions.Count(action => action.EligibleForHalving);
-    }
-
-    private static float GetSpeed(ActionData firstAction, ActionData secondAction)
-    {
-        if (firstAction == null || secondAction == null)
-            return 0;
-        if (firstAction.at == secondAction.at)
-            return 0;
-        try
-        {
-            if (secondAction.at < firstAction.at)
-            {
-                // Swap actions
-                var temp = secondAction;
-                secondAction = firstAction;
-                firstAction = temp;
-            }
-            return 1000f * ((float)Math.Abs(secondAction.pos - firstAction.pos) / (float)Math.Abs(secondAction.at - firstAction.at));
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed on actions {firstAction}, {secondAction}: {ex.Message}");
-            return 0;
-        }
     }
 
 }
