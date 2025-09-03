@@ -1,66 +1,68 @@
-using funscript_web_app.models;
-
 namespace funscript_web_app;
 
+public class FunQuarterOptions
+{
+    public bool RemoveShortPauses { get; set; }
+    public int ShortPauseDuration { get; set; } = 2000;
+    public bool MatchFirstDownstroke { get; set; }
+    public bool ResetAfterPause { get; set; }
+    public bool MatchGroupEndPosition { get; set; }
+    public float SpeedThreshold { get; set; } = 0f;
+    public int TopPercentile { get; set; } = 10;
+}
 
-
-    public static class funscript_converter_funquarter
+public static class funscript_converter_funquarter
+{
+    public static List<ActionData> GetFilteredGroup(Funscript funscript)
     {
-        public static List<ActionData> GetFilteredGroup(Funscript funscript)
+        return funscript.actions.Where((action, i) =>
         {
-            return funscript.actions.Where((action, i) =>
-            {
-                // Always include the first and last actions
-                if (i == 0 || i == funscript.number_of_actions - 1)
-                    return true;
+            if (i == 0 || i == funscript.number_of_actions - 1)
+                return true;
 
-                // Get the previous and next actions
-                var lastAction = funscript.actions[i - 1];
-                var nextAction = funscript.actions[i + 1];
+            var lastAction = funscript.actions[i - 1];
+            var nextAction = funscript.actions[i + 1];
 
-                // Exclude actions that occur within a pause
-                // (where current, previous, and next actions all have the same position)
-                return !(action.pos == lastAction.pos && action.pos == nextAction.pos);
-            }).ToList();
-        }
+            return !(action.pos == lastAction.pos && action.pos == nextAction.pos);
+        }).ToList();
+    }
 
-        public static List<ActionData> RemoveShortPauses(List<ActionData> filteredGroup, FunQuarter_options options)
+    public static List<ActionData> RemoveShortPauses(List<ActionData> filteredGroup, FunQuarterOptions options)
+    {
+        if (!options.RemoveShortPauses) return filteredGroup;
+
+        var newFilteredGroup = new List<ActionData>();
+        int pauseTime = options.ShortPauseDuration;
+
+        for (int i = 0; i < filteredGroup.Count; i++)
         {
-            if (!options.RemoveShortPauses) return filteredGroup;
-
-            var newFilteredGroup = new List<ActionData>();
-            int pauseTime = options.ShortPauseDuration;
-
-            for (int i = 0; i < filteredGroup.Count; i++)
+            var action = filteredGroup[i];
+            if (i == 0 || i == filteredGroup.Count - 1)
             {
-                var action = filteredGroup[i];
-                if (i == 0 || i == filteredGroup.Count - 1)
-                {
-                    newFilteredGroup.Add(action);
-                    continue;
-                }
-
-                var lastAction = filteredGroup[i - 1];
-                var nextAction = i < filteredGroup.Count - 1 ? filteredGroup[i + 1] : null;
-
-                if (action.pos == lastAction.pos && Math.Abs(action.at - lastAction.at) < pauseTime)
-                {
-                    newFilteredGroup.Add(new ActionData { at = (action.at + lastAction.at) / 2, pos = action.pos });
-                }
-                else if (nextAction != null && action.pos == nextAction.pos && Math.Abs(action.at - nextAction.at) < pauseTime)
-                {
-                    // Do nothing - we'll combine them at the next action
-                }
-                else
-                {
-                    newFilteredGroup.Add(action);
-                }
+                newFilteredGroup.Add(action);
+                continue;
             }
 
-            return newFilteredGroup;
+            var lastAction = filteredGroup[i - 1];
+            var nextAction = i < filteredGroup.Count - 1 ? filteredGroup[i + 1] : null;
+
+            if (action.pos == lastAction.pos && Math.Abs(action.at - lastAction.at) < pauseTime)
+            {
+                newFilteredGroup.Add(new ActionData { at = (action.at + lastAction.at) / 2, pos = action.pos });
+            }
+            else if (nextAction != null && action.pos == nextAction.pos && Math.Abs(action.at - nextAction.at) < pauseTime)
+            {
+            }
+            else
+            {
+                newFilteredGroup.Add(action);
+            }
         }
 
-    public static List<KeyAction> IdentifyKeyActions(List<ActionData> filteredGroup, FunQuarter_options options)
+        return newFilteredGroup;
+    }
+
+    public static List<KeyAction> IdentifyKeyActions(List<ActionData> filteredGroup, FunQuarterOptions options)
     {
         var keyActions = new List<KeyAction>();
         int apexCount = 0;
@@ -109,10 +111,19 @@ namespace funscript_web_app;
             }
             else if (Math.Sign(action.pos - lastAction.pos) != Math.Sign(nextAction.pos - action.pos))
             {
-                if (apexCount < 3)
+                if (isEligibleForHalving)
                 {
-                    keyActions.Last().SubActions.Add(action);
-                    apexCount++;
+                    if (apexCount < 3)
+                    {
+                        keyActions.Last().SubActions.Add(action);
+                        apexCount++;
+                    }
+                    else
+                    {
+                        keyAction.Type = "apex";
+                        keyActions.Add(keyAction);
+                        apexCount = 0;
+                    }
                 }
                 else
                 {
@@ -130,81 +141,98 @@ namespace funscript_web_app;
         return keyActions;
     }
 
-    public static ActionData[] GenerateFinalActions(List<KeyAction> keyActions, Funscript funscipt, FunQuarter_options options)
+    public static ActionData[] GenerateFinalActions(List<KeyAction> keyActions, Funscript funscipt, FunQuarterOptions options)
+    {
+        var finalActions = new List<ActionData>();
+        int pos = options.ResetAfterPause ? 100 : keyActions[0].pos;
+
+        for (int i = 0; i < keyActions.Count; i++)
         {
+            var action = keyActions[i];
+            ActionData outputAction;
 
-            var finalActions = new List<ActionData>();
-            int pos = options.ResetAfterPause ? 100 : keyActions[0].pos;
-
-            for (int i = 0; i < keyActions.Count; i++)
+            if (i == 0)
             {
-                var action = keyActions[i];
-                ActionData outputAction;
+                outputAction = new ActionData { at = action.at, pos = pos };
+            }
+            else
+            {
+                var lastAction = keyActions[i - 1];
+                outputAction = new ActionData { at = action.at, pos = action.pos };
 
-                if (i == 0)
+                if (action.Type != "pause" && lastAction.SubActions.Any())
                 {
-                    outputAction = new ActionData { at = action.at, pos = pos };
+                    var newPos = (lastAction.SubActions.Sum(a => a.pos) + action.pos) / (lastAction.SubActions.Count + 1);
+                    outputAction.pos = (int)Math.Round(newPos);
+                    pos = outputAction.pos;
                 }
-                else
-                {
-                    var lastAction = keyActions[i - 1];
-                    outputAction = new ActionData { at = action.at, pos = action.pos };
-
-                    if ( action.Type != "pause" && lastAction.SubActions.Any())
-                    {
-                    var max = Math.Max(lastAction.SubActions.Max(a => a.pos), action.pos);
-                    var min = Math.Min(lastAction.SubActions.Min(a => a.pos), action.pos);
-                    var newPos = Math.Abs(pos - min) > Math.Abs(pos - max) ? min : max;
-                    outputAction.pos = newPos;
-                    pos = newPos;
-
-                }
-                }
-
-                finalActions.Add(outputAction);
             }
 
-            if (options.MatchGroupEndPosition && finalActions.Last().pos != funscipt.actions.Last().pos)
-            {
-                var finalActionDuration = finalActions.Last().at - finalActions[finalActions.Count - 2].at;
-                finalActions.Add(new ActionData
-                {
-                    at = finalActions.Last().at + finalActionDuration,
-                    pos = funscipt.actions.Last().pos
-                });
-            }
-
-            return finalActions.Select(a => new ActionData
-            {
-                at = (int)Math.Floor(a.at + 0.5),
-                pos = (int)Math.Floor(a.pos + 0.5)
-            }).ToArray();
+            finalActions.Add(outputAction);
         }
 
-        public static Funscript GetQuarterSpeedScript(Funscript funscript, FunQuarter_options options, ILogger logger)
-        {   logger.LogWarning($"the funscript started of with {funscript.number_of_actions} actions", funscript);
-            var filteredGroup = GetFilteredGroup(funscript);
+        if (options.MatchGroupEndPosition && finalActions.Last().pos != funscipt.actions.Last().pos)
+        {
+            var finalActionDuration = finalActions.Last().at - finalActions[finalActions.Count - 2].at;
+            finalActions.Add(new ActionData
+            {
+                at = finalActions.Last().at + finalActionDuration,
+                pos = funscipt.actions.Last().pos
+            });
+        }
+
+        return finalActions.Select(a => new ActionData
+        {
+            at = (int)Math.Floor(a.at + 0.5),
+            pos = (int)Math.Floor(a.pos + 0.5)
+        }).ToArray();
+    }
+
+    public static Funscript GetQuarterSpeedScript(Funscript funscript, FunQuarterOptions options, ILogger logger)
+    {
+        logger.LogWarning($"the funscript started of with {funscript.number_of_actions} actions", funscript);
+        var filteredGroup = GetFilteredGroup(funscript);
         logger.LogWarning($"after first filtering number left is{filteredGroup.Count}", filteredGroup.Count);
+
+        if (options.TopPercentile > 0 && options.TopPercentile < 100)
+        {
+            var speeds = new List<float>();
+            for (int i = 1; i < filteredGroup.Count; i++)
+            {
+                speeds.Add(GetSpeed(filteredGroup[i - 1], filteredGroup[i]));
+            }
+            speeds.Sort();
+            int index = (int)Math.Floor(speeds.Count * (1 - options.TopPercentile / 100.0));
+            if (index >= 0 && index < speeds.Count)
+            {
+                options.SpeedThreshold = speeds[index];
+            }
+        }
+        else
+        {
+            options.SpeedThreshold = 0;
+        }
+
         var shortPauseRemovedGroup = RemoveShortPauses(filteredGroup, options);
         logger.LogWarning($"after removing short pauses {shortPauseRemovedGroup.Count}", shortPauseRemovedGroup.Count);
-            var keyActions = IdentifyKeyActions(shortPauseRemovedGroup, options);
+        var keyActions = IdentifyKeyActions(shortPauseRemovedGroup, options);
         logger.LogWarning($"number of keyactions over the speedlimit is {CountActionsExceedingThreshold(keyActions)}");
         logger.LogWarning($"number of identified keyactions is {keyActions.Count}", keyActions.Count);
-            var finalActions = GenerateFinalActions(keyActions, funscript, options);
+        var finalActions = GenerateFinalActions(keyActions, funscript, options);
 
-            Funscript QuarterSpeedScript = new Funscript
-            {
-                version = funscript.version,
-                inverted = funscript.inverted,
-                range = funscript.range,
-                actions = finalActions,
-                metadata = funscript.metadata,
-                video_url = funscript.video_url,
-                title = $"{funscript.title}_QuarterSpeed_with_pause_duration{options.ShortPauseDuration}"
-            };
+        Funscript QuarterSpeedScript = new Funscript
+        {
+            version = funscript.version,
+            inverted = funscript.inverted,
+            range = funscript.range,
+            actions = finalActions,
+            metadata = funscript.metadata,
+            video_url = funscript.video_url,
+            title = $"{funscript.title}_QuarterSpeed_with_pause_duration{options.ShortPauseDuration}"
+        };
 
-            return QuarterSpeedScript;
-        }
+        return QuarterSpeedScript;
+    }
 
     public static int CountActionsExceedingThreshold(List<KeyAction> keyActions)
     {
@@ -221,7 +249,6 @@ namespace funscript_web_app;
         {
             if (secondAction.at < firstAction.at)
             {
-                // Swap actions
                 var temp = secondAction;
                 secondAction = firstAction;
                 firstAction = temp;

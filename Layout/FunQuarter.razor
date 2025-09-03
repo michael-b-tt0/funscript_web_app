@@ -3,7 +3,8 @@
 
 <p>Quarters the speed of a script without sacrificing sync by changing each up+down stroke into a single up or down stroke.</p>
 
-<InputNumber id="speed_threshold" @bind-Value="speedThreshold" class="form-control" />
+<label for="top_percentile">Apply to top X % of fastest movements</label>
+<InputNumber id="top_percentile" @bind-Value="TopPercentile" class="form-control" />
 <div class="form-check">
     <input type="checkbox" class="form-check-input" @bind="@Reset_After_Pause" id="Reset_After_Pause" />
     <label class="form-check-label" for="checkboxExample">Reset After Pause</label>
@@ -31,8 +32,6 @@
     [Parameter]
     public EventCallback<bool> GrandChildDataChanged { get; set; }
 
-
-
     public bool Reset_After_Pause { get; set; }
 
     public bool Remove_Short_Pauses { get; set; } = true;
@@ -41,7 +40,7 @@
 
     public bool Match_Group_End_Position { get; set; } = true;
 
-    public float speedThreshold { get; set; } = 0f;
+    public int TopPercentile { get; set; } = 10;
 
     public int short_pause_duration { get; set; } = 2000;
 
@@ -50,14 +49,14 @@
     private void Apply_funquarter()
     {
         funscript = funscript_manager.modified_funscript;
-        FunQuarter_options options = new FunQuarter_options
+        FunQuarterOptions options = new FunQuarterOptions
             {
                 ResetAfterPause = Reset_After_Pause,
                 RemoveShortPauses = Remove_Short_Pauses,
                 MatchFirstDownstroke = Match_First_Downstroke,
                 MatchGroupEndPosition = Match_Group_End_Position,
                 ShortPauseDuration = short_pause_duration,
-                    SpeedThreshold = speedThreshold,
+                TopPercentile = TopPercentile,
             };
         if(funscript != null){
             funscript = funscript_converter_funquarter.GetQuarterSpeedScript(funscript, options, Logger);
@@ -74,11 +73,7 @@
 
     private void reset_script()
     {
-
         funscript_manager.modified_funscript = funscript_manager.starting_funscript;
         funscript_manager.Reset_trigger_canvas_rerender = !funscript_manager.Reset_trigger_canvas_rerender;
-
     }
-
-
 }
