@@ -1,145 +1,104 @@
-﻿@inject IJSRuntime JSRuntime
+@inject IJSRuntime JSRuntime
 @inject ILogger<Htmlcanvas> Logger
 
-
-<div class="card" style="max-width: 1500px;">
-
-
-    <BECanvas Width="@Width" Height="@Height" @ref="@_canvasReference">
-    </BECanvas>
+<div class="card" style="max-width: 1500px; position: relative;">
+    @if (isLoading)
+    {
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.8); display: flex; align-items: center; justify-content: center; z-index: 10;">
+            <p>Loading canvas...</p>
+        </div>
+    }
+    <BECanvas Width="@Width" Height="@Height" @ref="@_canvasReference"></BECanvas>
 </div>
 
-
-
-
-
-
-
-
 <Timeline Times="@TimeLine" @ref="Time_line" />
-
 
 @if (!Maincanvas)
 {
     <div class="download_button">
-        <button class="btn btn-primary mb-2 button1" @onclick="downloadscript">Download modified
-            script</button>
-
+        <button class="btn btn-primary mb-2 button1" @onclick="downloadscript">Download modified script</button>
     </div>
 }
 
-
-
-
-
-
-
-
-
-
 @code {
     private Canvas2DContext _context;
+    private bool isLoading = true;
 
     public Timeline? Time_line;
 
     [Parameter]
-
     public bool Maincanvas { get; set; }
 
     [Parameter]
-
     public Funscript? funscript { get; set; }
     public BECanvasComponent? _canvasReference;
 
     [Parameter]
-
     public int Width { get; set; }
 
     [Parameter]
-
     public int Height { get; set; }
     [Parameter]
     public EventCallback CanvasChanged { get; set; }
 
-
-
     public List<int> TimeLine;
 
-
-
-
-
-
-    protected override async Task OnAfterRenderAsync(bool
-    firstRender)
+    protected override async Task OnParametersSetAsync()
     {
-        List<int> timeline = new List<int>();
+        isLoading = true;
+        await base.OnParametersSetAsync();
+    }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (funscript == null) return;
+
+        List<int> timeline = new List<int>();
         float timeinterval = funscript.lastactionat / 9f;
-        //Logger.LogWarning($"first time interval is {timeinterval}", timeinterval);
         timeline.Add(0);
         Logger.LogWarning("First time 0 added to timeline");
 
-
-
         int currentTime = 0;
-        this._context = await
-        this._canvasReference.CreateCanvas2DAsync();
+        this._context = await this._canvasReference.CreateCanvas2DAsync();
         await this._context.ClearRectAsync(0, 0, Width, Height);
         await this._context.BeginBatchAsync();
-        //LoggerExtensions.Log_number_of_funscript_actions(Logger, funscript.actions.Length);
+
         for (int i = 1; i < funscript.actions.Length; i++)
         {
             var action = funscript.actions[i];
             var prevAction = funscript.actions[i - 1];
-            @* double x = (action.At + prevAction.At) / 2; *@
-            @* x = Canvas_options.TimeToX(x, funscript, Width); *@
-            var x_value = Canvas_options.TimeToX(prevAction.at,
-                    funscript, Width);
-            
+            var x_value = Canvas_options.TimeToX(prevAction.at, funscript, Width);
             var y_value = Canvas_options.PosToY(prevAction, Height);
             var speed = Funscript.GetSpeed(prevAction, action);
-            
             Colour linecolour = ColorHelper.GetColor((int)speed);
-            @* int xFloor = (int)Math.Floor(x); *@
-            await
-                            this._context.SetStrokeStyleAsync(linecolour.HexValue);
+
+            await this._context.SetStrokeStyleAsync(linecolour.HexValue);
             await this._context.BeginPathAsync();
             await this._context.MoveToAsync(x_value, y_value);
-            await
-            this._context.LineToAsync(Canvas_options.TimeToX(action.at,
-            funscript, Width), Canvas_options.PosToY(action, Height));
+            await this._context.LineToAsync(Canvas_options.TimeToX(action.at, funscript, Width), Canvas_options.PosToY(action, Height));
             await this._context.StrokeAsync();
-            
-            
-            //LoggerExtensions.Log_html_cavas_render(Logger, i,action.at, action.pos, prevAction.at, prevAction.pos, x_value, y_value, speed, linecolour.HexValue);
 
             if (currentTime >= timeinterval)
-
             {
-                // Draw text at the bottom of the canvas
-                @* await this._context.SetFillStyleAsync("black");
-await this._context.FillTextAsync($"Time: {currentTime:F2}",
-x, Height - 15); // Adjust position as needed *@
                 timeline.Add(prevAction.at);
                 timeinterval += (funscript.lastactionat / 9f);
-                //Logger.LogWarning($"time interval number{i} is {timeinterval}", i, timeinterval);
-                //Logger.LogWarning($"time {prevAction.at} add to timeline at {i}", prevAction.at, i);
             }
 
-            // Update current time
             currentTime = action.at;
             if (currentTime == funscript.lastactionat)
             {
-                //Logger.LogWarning($"time {currentTime} added to timeline at {i}", currentTime, i);
                 timeline.Add(funscript.lastactionat);
             }
         }
         await this._context.EndBatchAsync();
         funscript_manager.User_entered_funscript = true;
         Change(timeline);
-        
-        
+
+        if (isLoading)
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
     private void Change(List<int> newTimes)
@@ -147,12 +106,9 @@ x, Height - 15); // Adjust position as needed *@
         if (Time_line != null)
         {
             Time_line.Update(newTimes);
-            
         }
-
     }
-    
-    
+
     public async Task downloadscript()
     {
         var (fileData, fileName) = funscript_manager.serialise();
