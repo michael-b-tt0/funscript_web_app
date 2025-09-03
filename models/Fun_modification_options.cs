@@ -24,6 +24,8 @@ public class FunHalver_options_2
     public bool ResetAfterPause { get; set; }
 
     public bool MatchGroupEndPosition { get; set; }
+
+    public float SpeedThreshold { get; set; } = 0f;
 }
 
 public class FunQuarter_options
