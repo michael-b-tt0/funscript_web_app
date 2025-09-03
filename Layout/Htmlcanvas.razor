@@ -86,7 +86,7 @@
         this._context = await
         this._canvasReference.CreateCanvas2DAsync();
         await this._context.ClearRectAsync(0, 0, Width, Height);
-        
+        await this._context.BeginBatchAsync();
         //LoggerExtensions.Log_number_of_funscript_actions(Logger, funscript.actions.Length);
         for (int i = 1; i < funscript.actions.Length; i++)
         {
@@ -135,6 +135,7 @@ x, Height - 15); // Adjust position as needed *@
                 timeline.Add(funscript.lastactionat);
             }
         }
+        await this._context.EndBatchAsync();
         funscript_manager.User_entered_funscript = true;
         Change(timeline);
         

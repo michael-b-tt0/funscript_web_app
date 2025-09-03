@@ -650,70 +650,71 @@ public static class funscript_converter_funhalver_2
         return HalfSpeedScript;
     }
 
-/*
-    public static ActionData[] GenerateFinalActions(List<KeyAction> keyActions, Funscript funscript, FunHalver_options_2 options)
-    {
-        var finalActions = new List<ActionData>();
-        int pos = options.ResetAfterPause ? 100 : keyActions[0].pos;
-
-        for (int i = 0; i < keyActions.Count; i++)
+    
+    /*
+        public static ActionData[] GenerateFinalActions(List<KeyAction> keyActions, Funscript funscript, FunHalver_options_2 options)
         {
-            var action = keyActions[i];
-            ActionData outputAction;
+            var finalActions = new List<ActionData>();
+            int pos = options.ResetAfterPause ? 100 : keyActions[0].pos;
 
-            if (i == 0)
+            for (int i = 0; i < keyActions.Count; i++)
             {
-                outputAction = new ActionData { at = action.at, pos = pos };
-            }
-            else
-            {
-                var lastAction = keyActions[i - 1];
-                outputAction = new ActionData { at = action.at, pos = action.pos };
+                var action = keyActions[i];
+                ActionData outputAction;
 
-                if (action.Type != "pause" && lastAction.SubActions.Any())
+                if (i == 0)
                 {
-                    if (action.EligibleForHalving)
+                    outputAction = new ActionData { at = action.at, pos = pos };
+                }
+                else
+                {
+                    var lastAction = keyActions[i - 1];
+                    outputAction = new ActionData { at = action.at, pos = action.pos };
+
+                    if (action.Type != "pause" && lastAction.SubActions.Any())
                     {
-                        // Apply halving logic for eligible actions
-                        var max = Math.Max(lastAction.SubActions.Max(a => a.pos), action.pos);
-                        var min = Math.Min(lastAction.SubActions.Min(a => a.pos), action.pos);
-                        var newPos = Math.Abs(pos - min) > Math.Abs(pos - max) ? min : max;
-                        outputAction.pos = (newPos + lastAction.pos) / 2; // Halving
-                        pos = outputAction.pos;
+                        if (action.EligibleForHalving)
+                        {
+                            // Apply halving logic for eligible actions
+                            var max = Math.Max(lastAction.SubActions.Max(a => a.pos), action.pos);
+                            var min = Math.Min(lastAction.SubActions.Min(a => a.pos), action.pos);
+                            var newPos = Math.Abs(pos - min) > Math.Abs(pos - max) ? min : max;
+                            outputAction.pos = (newPos + lastAction.pos) / 2; // Halving
+                            pos = outputAction.pos;
+                        }
+                        else
+                        {
+                            // For non-eligible actions, use the original position
+                            outputAction.pos = action.pos;
+                            pos = outputAction.pos;
+                        }
                     }
                     else
                     {
-                        // For non-eligible actions, use the original position
+                        // For pauses or actions without SubActions, use the original position
                         outputAction.pos = action.pos;
                         pos = outputAction.pos;
                     }
                 }
-                else
-                {
-                    // For pauses or actions without SubActions, use the original position
-                    outputAction.pos = action.pos;
-                    pos = outputAction.pos;
-                }
+
+                finalActions.Add(outputAction);
             }
 
-            finalActions.Add(outputAction);
-        }
-
-        if (options.MatchGroupEndPosition && finalActions.Last().pos != funscript.actions.Last().pos)
-        {
-            var finalActionDuration = finalActions.Last().at - finalActions[finalActions.Count - 2].at;
-            finalActions.Add(new ActionData
+            if (options.MatchGroupEndPosition && finalActions.Last().pos != funscript.actions.Last().pos)
             {
-                at = finalActions.Last().at + finalActionDuration,
-                pos = funscript.actions.Last().pos
-            });
-        }
+                var finalActionDuration = finalActions.Last().at - finalActions[finalActions.Count - 2].at;
+                finalActions.Add(new ActionData
+                {
+                    at = finalActions.Last().at + finalActionDuration,
+                    pos = funscript.actions.Last().pos
+                });
+            }
 
-        return finalActions.Select(a => new ActionData
-        {
-            at = (int)Math.Floor(a.at + 0.5),
-            pos = (int)Math.Floor(a.pos + 0.5)
-        }).ToArray();
-    }*/
+            return finalActions.Select(a => new ActionData
+            {
+                at = (int)Math.Floor(a.at + 0.5),
+                pos = (int)Math.Floor(a.pos + 0.5)
+            }).ToArray();
+        }*/
 
 }
