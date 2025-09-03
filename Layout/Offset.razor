@@ -3,7 +3,7 @@
 <p>Add a fixed time offset to all actions in a script to ensure proper synchronization</p>
 
 
-<InputNumber id="numericInput" @bind-Value="numericValue" class="form-control" />
+<InputNumber id="numericInput" @bind-Value="numericValue" class="form-control" title="Time offset in milliseconds to add to all actions (positive = delay, negative = advance)" />
 
 <button class="btn btn-primary mb-2 button1" @onclick="() => offset(numericValue)">Apply Offset</button>
 <button class="btn btn-primary mb-2 button1" @onclick="reset_script">Reset Offset</button>

@@ -750,6 +750,8 @@ public static class funscript_converter_funquarter
         var filteredActions = new List<ActionData>();
         filteredActions.Add(funscript.actions[0]); // Always include the first action
 
+        int fastCounter = 0;
+
         for (int i = 1; i < funscript.actions.Length; i++)
         {
             var currentAction = funscript.actions[i];
@@ -760,13 +762,18 @@ public static class funscript_converter_funquarter
 
             // Include the action if:
             // 1. It's the last action, or
-            // 2. Its speed is above the threshold (higher threshold for quarter speed), or
-            // 3. It's not part of a pause (current, previous, and next actions don't all have the same position)
+            // 2. Its speed is below or equal to the threshold (preserve slow movements), or
+            // 3. It's a fast action and meets the thinning ratio
             if (i == funscript.actions.Length - 1 ||
-                speed > options.SpeedThreshold ||
-                !(currentAction.pos == lastAction.pos && (nextAction == null || currentAction.pos == nextAction.pos)))
+                speed <= options.SpeedThreshold ||
+                (speed > options.SpeedThreshold && fastCounter % options.ThinningRatio == 0))
             {
                 filteredActions.Add(currentAction);
+            }
+
+            if (speed > options.SpeedThreshold)
+            {
+                fastCounter++;
             }
         }
 
@@ -936,25 +943,35 @@ public static class funscript_converter_funquarter
     }
     public static Funscript GetQuarterSpeedScript(Funscript funscript, FunQuarter_options options, ILogger logger)
     {
-        // Map FunQuarter_options to FunHalver_options for compatibility
-        FunHalver_options halfOptions = new FunHalver_options
+        // Calculate dynamic speed threshold based on percentile
+        var speeds = new List<float>();
+        for (int i = 1; i < funscript.actions.Length; i++)
         {
-            RemoveShortPauses = options.RemoveShortPauses,
-            ShortPauseDuration = options.ShortPauseDuration,
-            MatchFirstDownstroke = options.MatchFirstDownstroke,
-            ResetAfterPause = options.ResetAfterPause,
-            MatchGroupEndPosition = options.MatchGroupEndPosition
+            var speed = GetSpeed(funscript.actions[i - 1], funscript.actions[i]);
+            speeds.Add(speed);
+        }
+        speeds.Sort();
+        int index = (int)((100 - options.Percentile) / 100.0 * speeds.Count);
+        options.SpeedThreshold = speeds[Math.Max(0, Math.Min(speeds.Count - 1, index))];
+
+        var filteredGroup = GetFilteredGroup(funscript, options);
+        logger.LogWarning($"Filtered Group Count: {filteredGroup.Count}", filteredGroup);
+        var shortPauseRemovedGroup = RemoveShortPauses(filteredGroup, options);
+
+        // Use pure filtering - output filtered actions directly with original positions
+        var finalActions = shortPauseRemovedGroup.ToArray();
+
+        Funscript QuarterSpeedScript = new Funscript
+        {
+            version = funscript.version,
+            inverted = funscript.inverted,
+            range = funscript.range,
+            actions = finalActions,
+            metadata = funscript.metadata,
+            video_url = funscript.video_url,
+            title = $"{funscript.title}_QuarterSpeed_percentile{options.Percentile}_thinning_ratio{options.ThinningRatio}"
         };
 
-        // First halving
-        var halfScript = funscript_converter_funhalver.GetHalfSpeedScript(funscript, halfOptions, logger);
-
-        // Second halving to achieve quarter
-        var quarterScript = funscript_converter_funhalver.GetHalfSpeedScript(halfScript, halfOptions, logger);
-
-        // Update title
-        quarterScript.title = $"{funscript.title}_QuarterSpeed";
-
-        return quarterScript;
+        return QuarterSpeedScript;
     }
 }

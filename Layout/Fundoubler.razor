@@ -2,10 +2,10 @@
 <p>Doubles the speed of a script without sacrificing sync by changing each up or down stroke into an up+down stroke.</p>
 
 <div class="form-check">
-    <input type="checkbox" class="form-check-input" @bind="@Match_group_end" id="Match_group_end" />
-    <label class="form-check-label" for="checkboxExample">Reset After Pause</label>
+    <input type="checkbox" class="form-check-input" @bind="@Match_group_end" id="Match_group_end" title="Ensure final position matches original script end" />
+    <label class="form-check-label" for="checkboxExample">Match Group End</label>
 </div>
-<InputNumber id="short_pause_duration" @bind-Value="short_pause_duration" class="form-control" />
+<InputNumber id="short_pause_duration" @bind-Value="short_pause_duration" class="form-control" title="Duration threshold for short pauses (milliseconds)" />
 <button class="btn btn-primary mb-2 button1" @onclick="Apply_fundoubler">Apply Fundoubler</button>
 <button class="btn btn-primary mb-2 button1" @onclick="reset_script">Reset Fundoubler</button>
 @code {

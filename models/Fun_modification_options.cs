@@ -38,4 +38,8 @@ public class FunQuarter_options
     public bool MatchGroupEndPosition { get; set; }
 
     public float SpeedThreshold { get; set; } = 0f;
+
+    public int ThinningRatio { get; set; } = 3;
+
+    public int Percentile { get; set; } = 30;
 }
