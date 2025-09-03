@@ -2,18 +2,41 @@
 <p>Doubles the speed of a script without sacrificing sync by changing each up or down stroke into an up+down stroke.</p>
 
 <div class="form-check">
-    <input type="checkbox" class="form-check-input" @bind="@Match_group_end" id="Match_group_end" />
-    <label class="form-check-label" for="checkboxExample">Reset After Pause</label>
+    <input type="checkbox" class="form-check-input" @bind="@Match_group_end" id="Match_group_end" title="Ensure final position matches original script end" disabled="@isProcessing" />
+    <label class="form-check-label" for="checkboxExample">Match Group End</label>
 </div>
-<InputNumber id="short_pause_duration" @bind-Value="short_pause_duration" class="form-control" />
-<button class="btn btn-primary mb-2 button1" @onclick="Apply_fundoubler">Apply Fundoubler</button>
-<button class="btn btn-primary mb-2 button1" @onclick="reset_script">Reset Fundoubler</button>
+<InputNumber id="short_pause_duration" @bind-Value="short_pause_duration" class="form-control" title="Duration threshold for short pauses (milliseconds)" disabled="@isProcessing" />
+
+@if (isProcessing)
+{
+    <button class="btn btn-primary mb-2 button1 me-2" disabled>
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Applying Fundoubler...
+    </button>
+}
+else
+{
+    <button class="btn btn-primary mb-2 button1 me-2" @onclick="Apply_fundoubler_async">Apply Fundoubler</button>
+}
+
+@if (isResetting)
+{
+    <button class="btn btn-primary mb-2 button1" disabled>
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Resetting...
+    </button>
+}
+else
+{
+    <button class="btn btn-primary mb-2 button1" @onclick="ResetScriptAsync">Reset Fundoubler</button>
+}
 @code {
+    private bool isProcessing = false;
+    private bool isResetting = false;
     private bool Match_group_end = true;
+    private int short_pause_duration = 100;
 
     Funscript? funscript;
-
-    private int short_pause_duration = 100;
 
     [Parameter]
     public bool GrandChildData { get; set; }
@@ -21,28 +44,62 @@
     [Parameter]
     public EventCallback<bool> GrandChildDataChanged { get; set; }
 
-    private void Apply_fundoubler()
+    private async Task Apply_fundoubler_async()
     {
-        funscript = funscript_manager.modified_funscript;
-        
-        FunDoublerOptions options = new FunDoublerOptions
+        isProcessing = true;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Run(() =>
             {
-                MatchGroupEnd = Match_group_end,
-                ShortPauseDuration = short_pause_duration
-            };
-        funscript = funscript_converter_fundoubler.GetDoubleSpeedScript(funscript, options);
-        funscript_manager.modified_funscript = funscript;
-        funscript_manager.User_Applied_modifier = true;
-        GrandChildData = true;
-        GrandChildDataChanged.InvokeAsync(GrandChildData);
+                funscript = funscript_manager.modified_funscript;
+
+                FunDoublerOptions options = new FunDoublerOptions
+                {
+                    MatchGroupEnd = Match_group_end,
+                    ShortPauseDuration = short_pause_duration
+                };
+                funscript = funscript_converter_fundoubler.GetDoubleSpeedScript(funscript, options);
+                funscript_manager.modified_funscript = funscript;
+                funscript_manager.User_Applied_modifier = true;
+            });
+
+            GrandChildData = true;
+            await GrandChildDataChanged.InvokeAsync(GrandChildData);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error applying Fundoubler: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
     }
 
-    private void reset_script()
+    private async Task ResetScriptAsync()
     {
+        isResetting = true;
+        StateHasChanged();
 
-        funscript_manager.modified_funscript = funscript_manager.starting_funscript;
-        funscript_manager.Reset_trigger_canvas_rerender = !funscript_manager.Reset_trigger_canvas_rerender;
-
+        try
+        {
+            await Task.Run(() =>
+            {
+                funscript_manager.modified_funscript = funscript_manager.starting_funscript;
+                funscript_manager.Reset_trigger_canvas_rerender = !funscript_manager.Reset_trigger_canvas_rerender;
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error resetting script: {ex.Message}");
+        }
+        finally
+        {
+            isResetting = false;
+            StateHasChanged();
+        }
     }
-
 }

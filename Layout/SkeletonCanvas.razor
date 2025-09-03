@@ -1,0 +1,75 @@
+@using Microsoft.AspNetCore.Components
+@inject IJSRuntime JSRuntime
+
+<div class="skeleton-canvas" style="width: @Width px; height: @Height px;">
+    <div class="skeleton-waveform">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line"></div>
+    </div>
+    <div class="skeleton-text">Processing script...</div>
+</div>
+
+<style scoped>
+    .skeleton-canvas {
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .skeleton-waveform {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 20px;
+    }
+
+    .skeleton-line {
+        height: 2px;
+        background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s infinite;
+        border-radius: 1px;
+    }
+
+    .skeleton-line:nth-child(1) { width: 90%; }
+    .skeleton-line:nth-child(2) { width: 85%; animation-delay: 0.1s; }
+    .skeleton-line:nth-child(3) { width: 95%; animation-delay: 0.2s; }
+    .skeleton-line:nth-child(4) { width: 80%; animation-delay: 0.3s; }
+    .skeleton-line:nth-child(5) { width: 88%; animation-delay: 0.4s; }
+
+    .skeleton-text {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #666;
+        font-size: 14px;
+        font-weight: 500;
+        animation: skeleton-pulse 2s infinite;
+    }
+
+    @@keyframes skeleton-loading {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+
+    @@keyframes skeleton-pulse {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; }
+    }
+</style>
+
+@code {
+    [Parameter] public int Width { get; set; } = 1500;
+    [Parameter] public int Height { get; set; } = 200;
+}

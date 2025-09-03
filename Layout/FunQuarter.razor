@@ -1,23 +1,25 @@
-﻿@inject ILogger<FunHalver> Logger
-<h3>FunHalver</h3>
+@inject ILogger<FunQuarter> Logger
+<h3>FunQuarter</h3>
 
-<p>Halves the speed of a script without sacrificing sync by changing each up+down stroke into a single up or down stroke.</p>
+<p>Quarters the speed of a script without sacrificing sync by changing each up+down stroke into a single up or down stroke.</p>
 
+<InputNumber id="percentile" @bind-Value="percentile" class="form-control" title="Defines what % of actions are considered 'fast' (e.g., 30 = top 30% are fast)" disabled="@isProcessing" />
+<InputNumber id="thinning_ratio" @bind-Value="thinningRatio" class="form-control" title="Keep every Nth fast action (e.g., 3 = keep every 3rd fast action)" disabled="@isProcessing" />
 <div class="form-check">
-    <input type="checkbox" class="form-check-input" @bind="@Reset_After_Pause" id="Reset_After_Pause" disabled="@isProcessing" />
+    <input type="checkbox" class="form-check-input" @bind="@Reset_After_Pause" id="Reset_After_Pause" title="Reset device position after pauses" disabled="@isProcessing" />
     <label class="form-check-label" for="checkboxExample">Reset After Pause</label>
 </div>
 <div class="form-check">
-    <input type="checkbox" class="form-check-input" @bind="@Remove_Short_Pauses" id="Remove_Short_Pauses" disabled="@isProcessing" />
+    <input type="checkbox" class="form-check-input" @bind="@Remove_Short_Pauses" id="Remove_Short_Pauses" title="Combine very short pauses with adjacent actions" disabled="@isProcessing" />
     <label class="form-check-label" for="checkboxExample">Remove Short Pauses</label>
 </div>
-<InputNumber id="short_pause_duration" @bind-Value="short_pause_duration" class="form-control" disabled="@isProcessing" />
+<InputNumber id="short_pause_duration" @bind-Value="short_pause_duration" class="form-control" title="Duration threshold for short pauses (milliseconds)" disabled="@isProcessing" />
 <div class="form-check">
-    <input type="checkbox" class="form-check-input" @bind="@Match_First_Downstroke" id="Match_First_Downstroke" disabled="@isProcessing" />
+    <input type="checkbox" class="form-check-input" @bind="@Match_First_Downstroke" id="Match_First_Downstroke" title="Ensure first movement is downward" disabled="@isProcessing" />
     <label class="form-check-label" for="checkboxExample">Match First Downstroke</label>
 </div>
 <div class="form-check">
-    <input type="checkbox" class="form-check-input" @bind="@Match_Group_End_Position" id="Match_Group_End_Position" disabled="@isProcessing" />
+    <input type="checkbox" class="form-check-input" @bind="@Match_Group_End_Position" id="Match_Group_End_Position" title="Ensure final position matches original script end" disabled="@isProcessing" />
     <label class="form-check-label" for="checkboxExample">Match Group End Position</label>
 </div>
 
@@ -25,12 +27,12 @@
 {
     <button class="btn btn-primary mb-2 button1 me-2" disabled>
         <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-        Applying FunHalver...
+        Applying FunQuarter...
     </button>
 }
 else
 {
-    <button class="btn btn-primary mb-2 button1 me-2" @onclick="Apply_funhalver_async">Apply FunHalver</button>
+    <button class="btn btn-primary mb-2 button1 me-2" @onclick="Apply_funquarter_async">Apply FunQuarter</button>
 }
 
 @if (isResetting)
@@ -42,7 +44,7 @@ else
 }
 else
 {
-    <button class="btn btn-primary mb-2 button1" @onclick="ResetScriptAsync">Reset FunHalver</button>
+    <button class="btn btn-primary mb-2 button1" @onclick="ResetScriptAsync">Reset FunQuarter</button>
 }
 
 @code {
@@ -59,11 +61,13 @@ else
     public bool Remove_Short_Pauses { get; set; } = true;
     public bool Match_First_Downstroke { get; set; }
     public bool Match_Group_End_Position { get; set; } = true;
+    public int thinningRatio { get; set; } = 3;
+    public int percentile { get; set; } = 30;
     public int short_pause_duration { get; set; } = 2000;
 
     Funscript? funscript;
 
-    private async Task Apply_funhalver_async()
+    private async Task Apply_funquarter_async()
     {
         isProcessing = true;
         StateHasChanged();
@@ -73,18 +77,26 @@ else
             await Task.Run(() =>
             {
                 funscript = funscript_manager.modified_funscript;
-                FunHalver_options options = new FunHalver_options
+                FunQuarter_options options = new FunQuarter_options
                 {
                     ResetAfterPause = Reset_After_Pause,
                     RemoveShortPauses = Remove_Short_Pauses,
                     MatchFirstDownstroke = Match_First_Downstroke,
                     MatchGroupEndPosition = Match_Group_End_Position,
-                    ShortPauseDuration = short_pause_duration
+                    ShortPauseDuration = short_pause_duration,
+                    ThinningRatio = thinningRatio,
+                    Percentile = percentile,
                 };
-
-                funscript = funscript_converter_funhalver.GetHalfSpeedScript(funscript, options, Logger);
-                funscript_manager.modified_funscript = funscript;
-                funscript_manager.User_Applied_modifier = true;
+                if (funscript != null)
+                {
+                    funscript = funscript_converter_funquarter.GetQuarterSpeedScript(funscript, options, Logger);
+                    funscript_manager.modified_funscript = funscript;
+                    funscript_manager.User_Applied_modifier = true;
+                }
+                else
+                {
+                    Logger.LogError("funscript is null");
+                }
             });
 
             GrandChildData = true;
@@ -92,7 +104,7 @@ else
         }
         catch (Exception ex)
         {
-            Logger.LogError($"Error applying FunHalver: {ex.Message}");
+            Logger.LogError($"Error applying FunQuarter: {ex.Message}");
         }
         finally
         {

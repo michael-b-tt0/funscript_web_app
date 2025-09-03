@@ -34,6 +34,12 @@
                 <FunHalver_2 GrandChildData="@data" GrandChildDataChanged="HandleGrandChildDataChanged" />
             </div>
         }
+        else if (componentToRender == ComponentType.FunQuarter)
+        {
+            <div class="Offset">
+                <FunQuarter GrandChildData="@data" GrandChildDataChanged="HandleGrandChildDataChanged" />
+            </div>
+        }
         
 
 
@@ -80,13 +86,14 @@
         FunHalver,
         Fundoubler,
         FunHalver2,
-        
+        FunQuarter,
+
     }
 
     private ComponentType componentToRender = ComponentType.None;
     private List<string> ButtonTexts = new List<string>
 {
-"Offset", "FunHalver", "Fundoubler", "FunHalver2", 
+"Offset", "FunHalver", "Fundoubler", "FunHalver2", "FunQuarter",
 };
 
     private void ButtonClicked(string buttonText)
@@ -109,7 +116,11 @@
                 // Handle Button 3 click
                 componentToRender = ComponentType.FunHalver2;
                 break;
-           
+            case "FunQuarter":
+                // Handle FunQuarter click
+                componentToRender = ComponentType.FunQuarter;
+                break;
+
         }
 
 
