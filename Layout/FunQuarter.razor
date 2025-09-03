@@ -3,27 +3,49 @@
 
 <p>Quarters the speed of a script without sacrificing sync by changing each up+down stroke into a single up or down stroke.</p>
 
-<InputNumber id="percentile" @bind-Value="percentile" class="form-control" title="Defines what % of actions are considered 'fast' (e.g., 30 = top 30% are fast)" />
-<InputNumber id="thinning_ratio" @bind-Value="thinningRatio" class="form-control" title="Keep every Nth fast action (e.g., 3 = keep every 3rd fast action)" />
+<InputNumber id="percentile" @bind-Value="percentile" class="form-control" title="Defines what % of actions are considered 'fast' (e.g., 30 = top 30% are fast)" disabled="@isProcessing" />
+<InputNumber id="thinning_ratio" @bind-Value="thinningRatio" class="form-control" title="Keep every Nth fast action (e.g., 3 = keep every 3rd fast action)" disabled="@isProcessing" />
 <div class="form-check">
-    <input type="checkbox" class="form-check-input" @bind="@Reset_After_Pause" id="Reset_After_Pause" title="Reset device position after pauses" />
+    <input type="checkbox" class="form-check-input" @bind="@Reset_After_Pause" id="Reset_After_Pause" title="Reset device position after pauses" disabled="@isProcessing" />
     <label class="form-check-label" for="checkboxExample">Reset After Pause</label>
 </div>
 <div class="form-check">
-    <input type="checkbox" class="form-check-input" @bind="@Remove_Short_Pauses" id="Remove_Short_Pauses" title="Combine very short pauses with adjacent actions" />
+    <input type="checkbox" class="form-check-input" @bind="@Remove_Short_Pauses" id="Remove_Short_Pauses" title="Combine very short pauses with adjacent actions" disabled="@isProcessing" />
     <label class="form-check-label" for="checkboxExample">Remove Short Pauses</label>
 </div>
-<InputNumber id="short_pause_duration" @bind-Value="short_pause_duration" class="form-control" title="Duration threshold for short pauses (milliseconds)" />
+<InputNumber id="short_pause_duration" @bind-Value="short_pause_duration" class="form-control" title="Duration threshold for short pauses (milliseconds)" disabled="@isProcessing" />
 <div class="form-check">
-    <input type="checkbox" class="form-check-input" @bind="@Match_First_Downstroke" id="Match_First_Downstroke" title="Ensure first movement is downward" />
+    <input type="checkbox" class="form-check-input" @bind="@Match_First_Downstroke" id="Match_First_Downstroke" title="Ensure first movement is downward" disabled="@isProcessing" />
     <label class="form-check-label" for="checkboxExample">Match First Downstroke</label>
 </div>
 <div class="form-check">
-    <input type="checkbox" class="form-check-input" @bind="@Match_Group_End_Position" id="Match_Group_End_Position" title="Ensure final position matches original script end" />
+    <input type="checkbox" class="form-check-input" @bind="@Match_Group_End_Position" id="Match_Group_End_Position" title="Ensure final position matches original script end" disabled="@isProcessing" />
     <label class="form-check-label" for="checkboxExample">Match Group End Position</label>
 </div>
-<button class="btn btn-primary mb-2 button1" @onclick="Apply_funquarter">Apply FunQuarter</button>
-<button class="btn btn-primary mb-2 button1" @onclick="reset_script">Reset FunQuarter</button>
+
+@if (isProcessing)
+{
+    <button class="btn btn-primary mb-2 button1 me-2" disabled>
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Applying FunQuarter...
+    </button>
+}
+else
+{
+    <button class="btn btn-primary mb-2 button1 me-2" @onclick="Apply_funquarter_async">Apply FunQuarter</button>
+}
+
+@if (isResetting)
+{
+    <button class="btn btn-primary mb-2 button1" disabled>
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Resetting...
+    </button>
+}
+else
+{
+    <button class="btn btn-primary mb-2 button1" @onclick="ResetScriptAsync">Reset FunQuarter</button>
+}
 
 @code {
     [Parameter]
@@ -32,57 +54,86 @@
     [Parameter]
     public EventCallback<bool> GrandChildDataChanged { get; set; }
 
-
+    private bool isProcessing = false;
+    private bool isResetting = false;
 
     public bool Reset_After_Pause { get; set; }
-
     public bool Remove_Short_Pauses { get; set; } = true;
-
     public bool Match_First_Downstroke { get; set; }
-
     public bool Match_Group_End_Position { get; set; } = true;
-
     public int thinningRatio { get; set; } = 3;
-
     public int percentile { get; set; } = 30;
-
     public int short_pause_duration { get; set; } = 2000;
 
     Funscript? funscript;
 
-    private void Apply_funquarter()
+    private async Task Apply_funquarter_async()
     {
-        funscript = funscript_manager.modified_funscript;
-        FunQuarter_options options = new FunQuarter_options
+        isProcessing = true;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Run(() =>
             {
-                ResetAfterPause = Reset_After_Pause,
-                RemoveShortPauses = Remove_Short_Pauses,
-                MatchFirstDownstroke = Match_First_Downstroke,
-                MatchGroupEndPosition = Match_Group_End_Position,
-                ShortPauseDuration = short_pause_duration,
+                funscript = funscript_manager.modified_funscript;
+                FunQuarter_options options = new FunQuarter_options
+                {
+                    ResetAfterPause = Reset_After_Pause,
+                    RemoveShortPauses = Remove_Short_Pauses,
+                    MatchFirstDownstroke = Match_First_Downstroke,
+                    MatchGroupEndPosition = Match_Group_End_Position,
+                    ShortPauseDuration = short_pause_duration,
                     ThinningRatio = thinningRatio,
                     Percentile = percentile,
-            };
-        if(funscript != null){
-            funscript = funscript_converter_funquarter.GetQuarterSpeedScript(funscript, options, Logger);
-            funscript_manager.modified_funscript = funscript;
-            funscript_manager.User_Applied_modifier = true;
+                };
+                if (funscript != null)
+                {
+                    funscript = funscript_converter_funquarter.GetQuarterSpeedScript(funscript, options, Logger);
+                    funscript_manager.modified_funscript = funscript;
+                    funscript_manager.User_Applied_modifier = true;
+                }
+                else
+                {
+                    Logger.LogError("funscript is null");
+                }
+            });
+
             GrandChildData = true;
-            GrandChildDataChanged.InvokeAsync(GrandChildData);
+            await GrandChildDataChanged.InvokeAsync(GrandChildData);
         }
-        else
+        catch (Exception ex)
         {
- Logger.LogError("funscript is null");
+            Logger.LogError($"Error applying FunQuarter: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
         }
     }
 
-    private void reset_script()
+    private async Task ResetScriptAsync()
     {
+        isResetting = true;
+        StateHasChanged();
 
-        funscript_manager.modified_funscript = funscript_manager.starting_funscript;
-        funscript_manager.Reset_trigger_canvas_rerender = !funscript_manager.Reset_trigger_canvas_rerender;
-
+        try
+        {
+            await Task.Run(() =>
+            {
+                funscript_manager.modified_funscript = funscript_manager.starting_funscript;
+                funscript_manager.Reset_trigger_canvas_rerender = !funscript_manager.Reset_trigger_canvas_rerender;
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error resetting script: {ex.Message}");
+        }
+        finally
+        {
+            isResetting = false;
+            StateHasChanged();
+        }
     }
-
-
 }

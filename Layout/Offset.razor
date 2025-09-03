@@ -3,10 +3,31 @@
 <p>Add a fixed time offset to all actions in a script to ensure proper synchronization</p>
 
 
-<InputNumber id="numericInput" @bind-Value="numericValue" class="form-control" title="Time offset in milliseconds to add to all actions (positive = delay, negative = advance)" />
+<InputNumber id="numericInput" @bind-Value="numericValue" class="form-control" title="Time offset in milliseconds to add to all actions (positive = delay, negative = advance)" disabled="@isProcessing" />
 
-<button class="btn btn-primary mb-2 button1" @onclick="() => offset(numericValue)">Apply Offset</button>
-<button class="btn btn-primary mb-2 button1" @onclick="reset_script">Reset Offset</button>
+@if (isProcessing)
+{
+    <button class="btn btn-primary mb-2 button1 me-2" disabled>
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Applying Offset...
+    </button>
+}
+else
+{
+    <button class="btn btn-primary mb-2 button1 me-2" @onclick="() => ApplyOffsetAsync(numericValue)">Apply Offset</button>
+}
+
+@if (isResetting)
+{
+    <button class="btn btn-primary mb-2 button1" disabled>
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Resetting...
+    </button>
+}
+else
+{
+    <button class="btn btn-primary mb-2 button1" @onclick="ResetScriptAsync">Reset Offset</button>
+}
 
 
 
@@ -19,39 +40,63 @@
     [Parameter]
     public EventCallback<bool> GrandChildDataChanged { get; set; }
 
-
     public int numericValue { get; set; }
-
-
+    private bool isProcessing = false;
+    private bool isResetting = false;
 
     Funscript? funscript;
-
     public bool render_modified_canvas { get; set; }
 
-    private void offset(int value)
+    private async Task ApplyOffsetAsync(int value)
     {
+        isProcessing = true;
+        StateHasChanged();
 
+        try
+        {
+            await Task.Run(() =>
+            {
+                funscript = funscript_manager.modified_funscript;
+                funscript = funscript_converter_offset.GetOffsetScript(funscript, value);
+                funscript_manager.modified_funscript = funscript;
+                funscript_manager.User_Applied_modifier = true;
+            });
 
-        funscript = funscript_manager.modified_funscript;
-        funscript = funscript_converter_offset.GetOffsetScript(funscript, value);
-        funscript_manager.modified_funscript = funscript;
-        funscript_manager.User_Applied_modifier = true;
-        GrandChildData = true;
-        GrandChildDataChanged.InvokeAsync(GrandChildData);
-        @* StateHasChanged(); *@
-
-
-
+            GrandChildData = true;
+            await GrandChildDataChanged.InvokeAsync(GrandChildData);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error applying offset: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
     }
 
-    private void reset_script()
+    private async Task ResetScriptAsync()
     {
+        isResetting = true;
+        StateHasChanged();
 
-        funscript_manager.modified_funscript = funscript_manager.starting_funscript;
-        funscript_manager.Reset_trigger_canvas_rerender = !funscript_manager.Reset_trigger_canvas_rerender;
-
+        try
+        {
+            await Task.Run(() =>
+            {
+                funscript_manager.modified_funscript = funscript_manager.starting_funscript;
+                funscript_manager.Reset_trigger_canvas_rerender = !funscript_manager.Reset_trigger_canvas_rerender;
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error resetting script: {ex.Message}");
+        }
+        finally
+        {
+            isResetting = false;
+            StateHasChanged();
+        }
     }
-
-
-
 }

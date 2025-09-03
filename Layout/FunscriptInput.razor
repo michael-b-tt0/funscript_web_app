@@ -1,6 +1,15 @@
 ﻿<div class="card boundry">
     <div class="card-body">
-        <InputFile OnChange="@SelectFile" accept=".funscript" class="form-control mb-3" />
+        <InputFile OnChange="@SelectFile" accept=".funscript" class="form-control mb-3" disabled="@isProcessingFile" />
+        @if (isProcessingFile)
+        {
+            <div class="d-flex justify-content-center align-items-center mb-3">
+                <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <span>Processing funscript file...</span>
+            </div>
+        }
         @if (file != null)
         {
             if (errorMessage == null)
@@ -50,6 +59,7 @@
     IBrowserFile? file;
     int MAXFILESIZE = 500000;
     string? errorMessage;
+    bool isProcessingFile = false;
 
     Funscript? funscript;
 
@@ -64,31 +74,36 @@
     {
         file = e.File;
         errorMessage = null;
-        if ((file.Size >= MAXFILESIZE))
+        isProcessingFile = true;
+        StateHasChanged();
 
+        if ((file.Size >= MAXFILESIZE))
         {
-            errorMessage = "file to too large";
+            errorMessage = "file too large";
+            isProcessingFile = false;
+            StateHasChanged();
         }
         else
         {
-
-
-            funscript = await
-            funscript_manager.DeserializeJsonFile(file);
-            funscript_manager.User_Applied_modifier = false;
-            Console.WriteLine(funscript.version);
-            Console.WriteLine(funscript.video_url);
-            Console.WriteLine(funscript.GetAverageSpeed());
-            @* funscript.generateActionGroups(); *@
-            await InputValueChanged.InvokeAsync(funscript);
-
-
-
-
+            try
+            {
+                funscript = await funscript_manager.DeserializeJsonFile(file);
+                funscript_manager.User_Applied_modifier = false;
+                Console.WriteLine(funscript.version);
+                Console.WriteLine(funscript.video_url);
+                Console.WriteLine(funscript.GetAverageSpeed());
+                @* funscript.generateActionGroups(); *@
+                await InputValueChanged.InvokeAsync(funscript);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Error processing file: {ex.Message}";
+            }
+            finally
+            {
+                isProcessingFile = false;
+                StateHasChanged();
+            }
         }
-
     }
-
-
-
 }
