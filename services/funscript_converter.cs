@@ -715,6 +715,246 @@ public static class funscript_converter_funhalver_2
                 at = (int)Math.Floor(a.at + 0.5),
                 pos = (int)Math.Floor(a.pos + 0.5)
             }).ToArray();
-        }*/
+}*/
 
+}
+
+public static class funscript_converter_funquarter
+{
+
+    private static float GetSpeed(ActionData firstAction, ActionData secondAction)
+    {
+        if (firstAction == null || secondAction == null)
+            return 0;
+        if (firstAction.at == secondAction.at)
+            return 0;
+        try
+        {
+            if (secondAction.at < firstAction.at)
+            {
+                // Swap actions
+                var temp = secondAction;
+                secondAction = firstAction;
+                firstAction = temp;
+            }
+            return 1000f * ((float)Math.Abs(secondAction.pos - firstAction.pos) / (float)Math.Abs(secondAction.at - firstAction.at));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed on actions {firstAction}, {secondAction}: {ex.Message}");
+            return 0;
+        }
+    }
+    public static List<ActionData> GetFilteredGroup(Funscript funscript, FunQuarter_options options)
+    {
+        var filteredActions = new List<ActionData>();
+        filteredActions.Add(funscript.actions[0]); // Always include the first action
+
+        for (int i = 1; i < funscript.actions.Length; i++)
+        {
+            var currentAction = funscript.actions[i];
+            var lastAction = funscript.actions[i - 1];
+            var nextAction = i < funscript.actions.Length - 1 ? funscript.actions[i + 1] : null;
+
+            float speed = GetSpeed(lastAction, currentAction);
+
+            // Include the action if:
+            // 1. It's the last action, or
+            // 2. Its speed is above the threshold (higher threshold for quarter speed), or
+            // 3. It's not part of a pause (current, previous, and next actions don't all have the same position)
+            if (i == funscript.actions.Length - 1 ||
+                speed > options.SpeedThreshold ||
+                !(currentAction.pos == lastAction.pos && (nextAction == null || currentAction.pos == nextAction.pos)))
+            {
+                filteredActions.Add(currentAction);
+            }
+        }
+
+        return filteredActions;
+    }
+
+    public static List<ActionData> RemoveShortPauses(List<ActionData> filteredGroup, FunQuarter_options options)
+    {
+        if (!options.RemoveShortPauses) return filteredGroup;
+
+        var newFilteredGroup = new List<ActionData>();
+        int pauseTime = options.ShortPauseDuration;
+
+        for (int i = 0; i < filteredGroup.Count; i++)
+        {
+            var action = filteredGroup[i];
+            if (i == 0 || i == filteredGroup.Count - 1)
+            {
+                newFilteredGroup.Add(action);
+                continue;
+            }
+
+            var lastAction = filteredGroup[i - 1];
+            var nextAction = i < filteredGroup.Count - 1 ? filteredGroup[i + 1] : null;
+
+            if (action.pos == lastAction.pos && Math.Abs(action.at - lastAction.at) < pauseTime)
+            {
+                newFilteredGroup.Add(new ActionData { at = (action.at + lastAction.at) / 2, pos = action.pos });
+            }
+            else if (nextAction != null && action.pos == nextAction.pos && Math.Abs(action.at - nextAction.at) < pauseTime)
+            {
+                // Do nothing - we'll combine them at the next action
+            }
+            else
+            {
+                newFilteredGroup.Add(action);
+            }
+        }
+
+        return newFilteredGroup;
+    }
+
+    public static List<KeyAction> IdentifyKeyActions(List<ActionData> filteredGroup, FunQuarter_options options)
+    {
+        var keyActions = new List<KeyAction>();
+        int apexCount = 0;
+
+        for (int i = 0; i < filteredGroup.Count; i++)
+        {
+            var action = filteredGroup[i];
+            var lastAction = i > 0 ? filteredGroup[i - 1] : null;
+            var nextAction = i < filteredGroup.Count - 1 ? filteredGroup[i + 1] : null;
+            float speed = lastAction != null ? GetSpeed(lastAction, action) : 0;
+            bool isEligibleForQuartering = speed > options.SpeedThreshold;
+            KeyAction keyAction = new KeyAction
+            {
+                at = action.at,
+                pos = action.pos,
+                EligibleForHalving = isEligibleForQuartering
+            };
+            if (i == 0)
+            {
+                keyAction.Type = "first";
+                keyActions.Add(keyAction);
+                continue;
+            }
+            if (i == filteredGroup.Count - 1)
+            {
+                keyAction.Type = "last";
+                keyActions.Add(keyAction);
+                continue;
+            }
+
+            if (action.pos == lastAction.pos)
+            {
+                keyAction.Type = "pause";
+                keyActions.Add(keyAction);
+                apexCount = 0;
+            }
+            else if (action.pos == nextAction.pos)
+            {
+                keyAction.Type = "prepause";
+                keyActions.Add(keyAction);
+                apexCount = 0;
+            }
+            else if (options.MatchFirstDownstroke && i == 1 && action.pos < lastAction.pos)
+            {
+                apexCount = 1;
+            }
+            else if (Math.Sign(action.pos - lastAction.pos) != Math.Sign(nextAction.pos - action.pos))
+            {
+                if (apexCount == 0)
+                {
+                    keyActions.Last().SubActions.Add(action);
+                    apexCount++;
+                }
+                else
+                {
+                    keyAction.Type = "apex";
+                    keyActions.Add(keyAction);
+                    apexCount = 0;
+                }
+            }
+            else
+            {
+                keyActions.Last().SubActions.Add(action);
+            }
+        }
+
+        return keyActions;
+    }
+
+    public static ActionData[] GenerateFinalActions(List<KeyAction> keyActions, Funscript funscript, FunQuarter_options options)
+    {
+        var finalActions = new List<ActionData>();
+        int pos = options.ResetAfterPause ? 100 : keyActions[0].pos;
+
+        for (int i = 0; i < keyActions.Count; i++)
+        {
+            var action = keyActions[i];
+            ActionData outputAction;
+
+            if (i == 0)
+            {
+                outputAction = new ActionData { at = action.at, pos = pos };
+            }
+            else
+            {
+                var lastAction = keyActions[i - 1];
+                outputAction = new ActionData { at = action.at, pos = action.pos };
+
+                if (action.Type != "pause" && lastAction.SubActions.Any() && action.EligibleForHalving)
+                {
+                    var max = Math.Max(lastAction.SubActions.Max(a => a.pos), action.pos);
+                    var min = Math.Min(lastAction.SubActions.Min(a => a.pos), action.pos);
+                    var newPos = Math.Abs(pos - min) > Math.Abs(pos - max) ? min : max;
+                    outputAction.pos = newPos;
+                    pos = newPos;
+                }
+
+                // If the action is eligible for quartering, adjust its position
+                if (action.Type != "pause" && lastAction.SubActions.Any() || !action.EligibleForHalving)
+                {
+                    /*outputAction.pos = action.pos;
+                    pos = outputAction.pos;*/
+                }
+            }
+
+            finalActions.Add(outputAction);
+        }
+
+        if (options.MatchGroupEndPosition && finalActions.Last().pos != funscript.actions.Last().pos)
+        {
+            var finalActionDuration = finalActions.Last().at - finalActions[finalActions.Count - 2].at;
+            finalActions.Add(new ActionData
+            {
+                at = finalActions.Last().at + finalActionDuration,
+                pos = funscript.actions.Last().pos
+            });
+        }
+
+        return finalActions.Select(a => new ActionData
+        {
+            at = (int)Math.Floor(a.at + 0.5),
+            pos = (int)Math.Floor(a.pos + 0.5)
+        }).ToArray();
+    }
+    public static Funscript GetQuarterSpeedScript(Funscript funscript, FunQuarter_options options, ILogger logger)
+    {
+        // Map FunQuarter_options to FunHalver_options for compatibility
+        FunHalver_options halfOptions = new FunHalver_options
+        {
+            RemoveShortPauses = options.RemoveShortPauses,
+            ShortPauseDuration = options.ShortPauseDuration,
+            MatchFirstDownstroke = options.MatchFirstDownstroke,
+            ResetAfterPause = options.ResetAfterPause,
+            MatchGroupEndPosition = options.MatchGroupEndPosition
+        };
+
+        // First halving
+        var halfScript = funscript_converter_funhalver.GetHalfSpeedScript(funscript, halfOptions, logger);
+
+        // Second halving to achieve quarter
+        var quarterScript = funscript_converter_funhalver.GetHalfSpeedScript(halfScript, halfOptions, logger);
+
+        // Update title
+        quarterScript.title = $"{funscript.title}_QuarterSpeed";
+
+        return quarterScript;
+    }
 }
