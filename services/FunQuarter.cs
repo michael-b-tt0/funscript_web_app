@@ -162,7 +162,7 @@ public static class funscript_converter_funquarter
 
                 if (action.Type != "pause" && lastAction.SubActions.Any())
                 {
-                    var newPos = (lastAction.SubActions.Sum(a => a.pos) + action.pos) / (lastAction.SubActions.Count + 1);
+                    var newPos = (double)(lastAction.SubActions.Sum(a => a.pos) + action.pos) / (lastAction.SubActions.Count + 1);
                     outputAction.pos = (int)Math.Round(newPos);
                     pos = outputAction.pos;
                 }
