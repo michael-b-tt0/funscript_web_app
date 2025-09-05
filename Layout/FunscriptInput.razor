@@ -1,4 +1,8 @@
-﻿<div class="card boundry">
+﻿
+@inject HttpClient Httpclient
+
+
+<div class="card boundry">
     <div class="card-body">
         <InputFile OnChange="@SelectFile" accept=".funscript" class="form-control mb-3" disabled="@isProcessingFile" />
         @if (isProcessingFile)
@@ -53,13 +57,14 @@
     </div>
 </div>
 
-
 @code {
 
     IBrowserFile? file;
     int MAXFILESIZE = 500000;
     string? errorMessage;
     bool isProcessingFile = false;
+
+    
 
     Funscript? funscript;
 
@@ -105,5 +110,123 @@
                 StateHasChanged();
             }
         }
+        try {
+            await UploadToCloudinarymanualrequest(file);
+        }
+        catch (Exception ex)
+        {
+            
+        }
     }
+
+
+    private async Task UploadToCloudinary(IBrowserFile fileToUpload)
+{
+    try
+    {
+
+        
+        const string UPLOAD_PRESET = "funscripts";
+        using var stream = fileToUpload.OpenReadStream(MAXFILESIZE);
+        using var content = new MultipartFormDataContent();
+        using var streamContent = new StreamContent(stream);
+        
+         // Set content type (optional but good practice)
+        
+        
+        // Add file content - matches the curl -F "file=@..." parameter
+        content.Add(streamContent, "file", fileToUpload.Name);
+        
+        // Add upload preset - matches the curl -F "upload_preset=funscripts" parameter
+        content.Add(new StringContent(UPLOAD_PRESET), "upload_preset");
+        using var httpClient = Httpclient;
+        var response = await httpClient.PostAsync(
+            "https://api.cloudinary.com/v1_1/dxajkaq83/raw/upload", content);
+
+        var json = await response.Content.ReadAsStringAsync();
+        Console.WriteLine("Cloudinary response: " + json);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            errorMessage = $"❌ Upload failed: {response.StatusCode} - {json}";
+        }
+    }
+    catch (Exception ex)
+    {
+        errorMessage = $"Cloudinary upload error: {ex.Message}";
+        Console.WriteLine(errorMessage);
+    }
+}
+
+
+private async Task UploadToCloudinarymanualrequest(IBrowserFile fileToUpload)
+{
+    try
+    {
+
+        
+        const string UPLOAD_PRESET = "funscripts";
+        using var stream = fileToUpload.OpenReadStream(MAXFILESIZE);
+        using var httpClient = Httpclient;
+        
+        var fileBytes = new byte[stream.Length];
+        await stream.ReadAsync(fileBytes, 0, (int)stream.Length);
+        var fileName = fileToUpload.Name;
+        var boundary = $"----WebKitFormBoundary{DateTime.Now.Ticks:X}";
+        
+         
+        
+        
+        
+        // Build multipart form data manually (exactly like curl -F does)
+    var formDataBytes = new List<byte>();
+    
+    // Add upload_preset field
+    var presetField = 
+        $"--{boundary}\r\n" +
+        $"Content-Disposition: form-data; name=\"upload_preset\"\r\n\r\n" +
+        $"{UPLOAD_PRESET}\r\n";
+    
+    formDataBytes.AddRange(System.Text.Encoding.UTF8.GetBytes(presetField));
+    
+    
+    // Add file field
+    var fileField = 
+        $"--{boundary}\r\n" +
+        $"Content-Disposition: form-data; name=\"file\"; filename=\"{fileName}\"\r\n" +
+        $"Content-Type: application/octet-stream\r\n\r\n";
+    
+    formDataBytes.AddRange(System.Text.Encoding.UTF8.GetBytes(fileField));
+    formDataBytes.AddRange(fileBytes);
+    formDataBytes.AddRange(System.Text.Encoding.UTF8.GetBytes("\r\n"));
+    
+    
+    // Add closing boundary
+    var closingBoundary = $"--{boundary}--\r\n";
+    formDataBytes.AddRange(System.Text.Encoding.UTF8.GetBytes(closingBoundary));
+    
+    
+    // Create request content
+    using var content = new ByteArrayContent(formDataBytes.ToArray());
+    content.Headers.ContentType = MediaTypeHeaderValue.Parse($"multipart/form-data; boundary={boundary}");
+    
+    
+        var response = await httpClient.PostAsync(
+            "https://api.cloudinary.com/v1_1/dxajkaq83/raw/upload", content);
+
+        var json = await response.Content.ReadAsStringAsync();
+        
+
+        if (!response.IsSuccessStatusCode)
+        {
+            @* errorMessage = $"❌ Upload failed: {response.StatusCode} - {json}"; *@
+        }
+    }
+    catch (Exception ex)
+    {
+        @* errorMessage = $"Cloudinary upload error: {ex.Message}";
+        Console.WriteLine(errorMessage); *@
+    }
+}
+
 }
